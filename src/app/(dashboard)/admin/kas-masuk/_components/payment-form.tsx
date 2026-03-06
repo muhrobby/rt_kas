@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { AlertTriangle, Check, ChevronsUpDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -14,9 +14,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, formatRupiah, formatTanggal } from "@/lib/utils";
 import { type KasMasukFormValues, kasMasukFormSchema } from "@/lib/validations/kas-masuk";
-import { createPembayaran, getAlreadyPaidBulans } from "@/server/actions/kas-masuk";
+import { createPembayaran, getAlreadyPaidBulans, getSekaliPaidHistory } from "@/server/actions/kas-masuk";
 import { getKategoriByJenis } from "@/server/actions/kategori-kas";
 import { getWargaForSelect } from "@/server/actions/warga";
 
@@ -55,6 +55,9 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
   const [wargaList, setWargaList] = useState<WargaOption[]>([]);
   const [kategoriList, setKategoriList] = useState<KategoriOption[]>([]);
   const [paidBulans, setPaidBulans] = useState<string[]>([]);
+  const [sekaliHistory, setSekaliHistory] = useState<
+    { id: number; waktuTransaksi: Date; nominal: number; keterangan: string | null }[]
+  >([]);
   const [wargaOpen, setWargaOpen] = useState(false);
   const [kategoriOpen, setKategoriOpen] = useState(false);
 
@@ -117,6 +120,15 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
     }
   }, [selectedWargaId, selectedKategoriId, selectedTahun, isSekali, form]);
 
+  // Fetch sekali-bayar payment history to warn if warga already paid
+  useEffect(() => {
+    if (isSekali && selectedWargaId && selectedKategoriId) {
+      getSekaliPaidHistory(selectedWargaId, selectedKategoriId).then(setSekaliHistory);
+    } else {
+      setSekaliHistory([]);
+    }
+  }, [selectedWargaId, selectedKategoriId, isSekali]);
+
   function handleKategoriCreated(kategori: {
     id: number;
     namaKategori: string;
@@ -150,6 +162,7 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
         keterangan: "",
       });
       setPaidBulans([]);
+      setSekaliHistory([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mencatat pembayaran");
     }
@@ -341,6 +354,26 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
               </FormItem>
             )}
           />
+        )}
+
+        {isSekali && sekaliHistory.length > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-950/40">
+            <div className="mb-2 flex items-center gap-2 font-medium text-amber-800 text-sm dark:text-amber-300">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              Warga ini sudah pernah membayar iuran ini
+            </div>
+            <ul className="space-y-1">
+              {sekaliHistory.map((h) => (
+                <li key={h.id} className="flex items-center justify-between text-amber-700 text-xs dark:text-amber-400">
+                  <span>{formatTanggal(h.waktuTransaksi)}</span>
+                  <span className="font-medium">{formatRupiah(h.nominal)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-amber-600 text-xs dark:text-amber-500">
+              Anda tetap bisa melanjutkan pembayaran jika memang diperlukan.
+            </p>
+          </div>
         )}
 
         {!isSekali && (

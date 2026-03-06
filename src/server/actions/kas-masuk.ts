@@ -169,6 +169,25 @@ export async function getTotalPemasukanBulanIni() {
 }
 
 /**
+ * Returns the previous payment records for a sekali-bayar kategori.
+ * Used by the payment form to warn the user that this warga has already paid.
+ */
+export async function getSekaliPaidHistory(wargaId: number, kategoriId: number) {
+  await requireAdmin();
+  if (!wargaId || !kategoriId) return [];
+  return db
+    .select({
+      id: transaksi.id,
+      waktuTransaksi: transaksi.waktuTransaksi,
+      nominal: transaksi.nominal,
+      keterangan: transaksi.keterangan,
+    })
+    .from(transaksi)
+    .where(and(eq(transaksi.wargaId, wargaId), eq(transaksi.kategoriId, kategoriId), eq(transaksi.tipeArus, "masuk")))
+    .orderBy(desc(transaksi.waktuTransaksi));
+}
+
+/**
  * Returns the list of months that a warga has already paid for a given kategori + tahun.
  * Used by the payment form to disable already-paid months in the MonthSelector.
  */
