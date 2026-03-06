@@ -40,17 +40,13 @@ export async function getWargaSaldoKas(): Promise<number> {
   return (masuk?.total ?? 0) - (keluar?.total ?? 0);
 }
 
-export async function getWargaRekapBulanIni(
-  bulan?: number,
-  tahun?: number,
-): Promise<{ totalMasuk: number; totalKeluar: number }> {
+export async function getWargaRekapTahun(tahun?: number): Promise<{ totalMasuk: number; totalKeluar: number }> {
   await requireAuth();
 
   const now = new Date();
-  const resolvedBulan = bulan ?? now.getMonth() + 1;
   const resolvedTahun = tahun ?? now.getFullYear();
-  const startDate = new Date(resolvedTahun, resolvedBulan - 1, 1);
-  const endDate = new Date(resolvedTahun, resolvedBulan, 1); // exclusive
+  const startDate = new Date(resolvedTahun, 0, 1);
+  const endDate = new Date(resolvedTahun + 1, 0, 1); // exclusive
 
   const [masuk] = await db
     .select({ total: sql<number>`coalesce(sum(${transaksi.nominal}), 0)::int` })
@@ -103,7 +99,7 @@ export async function getWargaMonthlyChartData(
   });
 }
 
-export async function getWargaLaporanTransaksi(bulan: number, tahun: number): Promise<LaporanTransaksiItem[]> {
+export async function getWargaPengeluaranBulan(bulan: number, tahun: number): Promise<LaporanTransaksiItem[]> {
   await requireAuth();
 
   const startDate = new Date(tahun, bulan - 1, 1);
@@ -123,13 +119,19 @@ export async function getWargaLaporanTransaksi(bulan: number, tahun: number): Pr
     .from(transaksi)
     .leftJoin(kategoriKas, eq(transaksi.kategoriId, kategoriKas.id))
     .leftJoin(warga, eq(transaksi.wargaId, warga.id))
-    .where(and(gte(transaksi.waktuTransaksi, startDate), lt(transaksi.waktuTransaksi, endDate)))
+    .where(
+      and(
+        eq(transaksi.tipeArus, "keluar"), // ONLy show expense details to Warga!
+        gte(transaksi.waktuTransaksi, startDate),
+        lt(transaksi.waktuTransaksi, endDate),
+      ),
+    )
     .orderBy(asc(transaksi.waktuTransaksi));
 
   return rows.map((r) => ({
     id: r.id,
     waktuTransaksi: r.waktuTransaksi,
-    tipeArus: r.tipeArus,
+    tipeArus: r.tipeArus, // always 'keluar'
     nominal: r.nominal,
     namaKategori: r.namaKategori ?? "-",
     keterangan: r.keterangan,
@@ -138,50 +140,26 @@ export async function getWargaLaporanTransaksi(bulan: number, tahun: number): Pr
   }));
 }
 
-export async function getAvailableLaporanPeriods(): Promise<LaporanPeriodOption[]> {
+export async function getAvailableLaporanYears(): Promise<number[]> {
   await requireAuth();
 
   const now = new Date();
-  const currentBulan = now.getMonth() + 1;
   const currentTahun = now.getFullYear();
 
   const rows = await db
     .selectDistinct({
-      bulan: sql<number>`extract(month from ${transaksi.waktuTransaksi})::int`,
       tahun: sql<number>`extract(year from ${transaksi.waktuTransaksi})::int`,
     })
     .from(transaksi);
 
-  const periods: LaporanPeriodOption[] = rows
-    .filter((r): r is { bulan: number; tahun: number } => r.bulan !== null && r.tahun !== null)
-    .map((r) => {
-      const bulanName = BULAN_NAMES[r.bulan - 1];
-      return {
-        bulan: r.bulan,
-        tahun: r.tahun,
-        label: `${bulanName ?? `Bulan ${r.bulan}`} ${r.tahun}`,
-      };
-    });
+  const years: number[] = rows.filter((r): r is { tahun: number } => r.tahun !== null).map((r) => r.tahun);
 
-  // Ensure current month is always present
-  const currentExists = periods.some((p) => p.bulan === currentBulan && p.tahun === currentTahun);
-  if (!currentExists) {
-    const bulanName = BULAN_NAMES[currentBulan - 1];
-    periods.push({
-      bulan: currentBulan,
-      tahun: currentTahun,
-      label: `${bulanName ?? `Bulan ${currentBulan}`} ${currentTahun}`,
-    });
+  if (!years.includes(currentTahun)) {
+    years.push(currentTahun);
   }
 
-  // Deduplicate
-  const seen = new Set<string>();
-  const unique = periods.filter((p) => {
-    const key = `${p.bulan}-${p.tahun}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  // Deduplicate and sort descending
+  const uniqueYears = Array.from(new Set(years)).sort((a, b) => b - a);
 
-  return unique.sort((a, b) => b.tahun - a.tahun || b.bulan - a.bulan);
+  return uniqueYears;
 }

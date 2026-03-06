@@ -2,84 +2,66 @@
 
 import { useCallback, useState } from "react";
 
-import type { LaporanPeriodOption, LaporanTransaksiItem } from "@/server/actions/warga-laporan";
-import {
-  getWargaLaporanTransaksi,
-  getWargaMonthlyChartData,
-  getWargaRekapBulanIni,
-  getWargaSaldoKas,
-} from "@/server/actions/warga-laporan";
+import { getWargaMonthlyChartData, getWargaRekapTahun, getWargaSaldoKas } from "@/server/actions/warga-laporan";
 
 import { LaporanChart } from "./laporan-chart";
 import { LaporanStatCards } from "./laporan-stat-cards";
-import { LaporanTable } from "./laporan-table";
+import { LaporanSummaryTable } from "./laporan-summary-table";
 
 interface LaporanShellProps {
-  initialBulan: number;
   initialTahun: number;
-  initialPeriods: LaporanPeriodOption[];
+  initialYears: number[];
   initialSaldo: number;
   initialRekap: { totalMasuk: number; totalKeluar: number };
-  initialTransaksi: LaporanTransaksiItem[];
   initialChartData: { bulan: number; masuk: number; keluar: number }[];
 }
 
 export function LaporanShell({
-  initialBulan,
   initialTahun,
-  initialPeriods,
+  initialYears,
   initialSaldo,
   initialRekap,
-  initialTransaksi,
   initialChartData,
 }: LaporanShellProps) {
-  const [selectedBulan, setSelectedBulan] = useState(initialBulan);
   const [selectedTahun, setSelectedTahun] = useState(initialTahun);
   const [saldo, setSaldo] = useState(initialSaldo);
   const [rekap, setRekap] = useState(initialRekap);
-  const [transaksiData, setTransaksiData] = useState<LaporanTransaksiItem[]>(initialTransaksi);
   const [chartData, setChartData] = useState(initialChartData);
   const [loading, setLoading] = useState(false);
 
-  const handlePeriodChange = useCallback(async (bulan: number, tahun: number) => {
-    setSelectedBulan(bulan);
+  const handleYearChange = useCallback(async (tahun: number) => {
     setSelectedTahun(tahun);
     setLoading(true);
     try {
-      const [newSaldo, newRekap, newTransaksi, newChart] = await Promise.all([
+      const [newSaldo, newRekap, newChart] = await Promise.all([
         getWargaSaldoKas(),
-        getWargaRekapBulanIni(bulan, tahun),
-        getWargaLaporanTransaksi(bulan, tahun),
+        getWargaRekapTahun(tahun),
         getWargaMonthlyChartData(tahun),
       ]);
       setSaldo(newSaldo);
       setRekap(newRekap);
-      setTransaksiData(newTransaksi);
       setChartData(newChart);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const selectedPeriod = initialPeriods.find((p) => p.bulan === selectedBulan && p.tahun === selectedTahun);
-  const periodLabel = selectedPeriod?.label ?? `${selectedBulan}/${selectedTahun}`;
-
   return (
     <div className="space-y-6">
       {/* Period selector pills */}
       <div className="flex flex-wrap gap-2">
-        {initialPeriods.map((p) => {
-          const isSelected = p.bulan === selectedBulan && p.tahun === selectedTahun;
+        {initialYears.map((tahun) => {
+          const isSelected = tahun === selectedTahun;
           return (
             <button
-              key={`${p.bulan}-${p.tahun}`}
+              key={tahun}
               type="button"
-              onClick={() => handlePeriodChange(p.bulan, p.tahun)}
+              onClick={() => handleYearChange(tahun)}
               className={`rounded-full px-4 py-1.5 font-medium text-sm transition-colors ${
                 isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
-              {p.label}
+              Tahun {tahun}
             </button>
           );
         })}
@@ -93,14 +75,13 @@ export function LaporanShell({
             saldoKas={saldo}
             pemasukanBulanIni={rekap.totalMasuk}
             pengeluaranBulanIni={rekap.totalKeluar}
-            periodLabel={periodLabel}
+            periodLabel={`Tahun ${selectedTahun}`}
           />
 
           <LaporanChart data={chartData} tahun={selectedTahun} />
 
-          <div>
-            <h2 className="mb-3 font-semibold text-base">Detail Transaksi — {periodLabel}</h2>
-            <LaporanTable data={transaksiData} />
+          <div className="pt-4">
+            <LaporanSummaryTable data={chartData} tahun={selectedTahun} />
           </div>
         </>
       )}
