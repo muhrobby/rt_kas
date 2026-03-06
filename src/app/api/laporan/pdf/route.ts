@@ -22,9 +22,13 @@ export async function GET(request: NextRequest) {
 
   const data = await getRekapKas(bulanAwal, bulanAkhir, tahun);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // biome-ignore lint/suspicious/noExplicitAny: @react-pdf/renderer typing requires any cast here
-  const element = React.createElement(LaporanPDF, { data, bulanAwal, bulanAkhir, tahun }) as any;
+  const element = React.createElement(LaporanPDF, {
+    data,
+    bulanAwal,
+    bulanAkhir,
+    tahun,
+    // biome-ignore lint/suspicious/noExplicitAny: @react-pdf/renderer requires any cast
+  }) as any;
   const pdfBuffer = await renderToBuffer(element);
 
   return new Response(new Uint8Array(pdfBuffer), {
