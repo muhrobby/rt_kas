@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { type KasKeluarFormValues, kasKeluarFormSchema } from "@/lib/validations/kas-keluar";
 import { createPengeluaran } from "@/server/actions/kas-keluar";
 import { getKategoriByJenis } from "@/server/actions/kategori-kas";
@@ -27,6 +30,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const [kategoriList, setKategoriList] = useState<KategoriOption[]>([]);
+  const [kategoriOpen, setKategoriOpen] = useState(false);
 
   const form = useForm<KasKeluarFormValues, unknown, KasKeluarFormValues>({
     resolver: zodResolver(kasKeluarFormSchema) as never,
@@ -66,29 +70,54 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Kategori combobox */}
             <FormField
               control={form.control}
               name="kategoriId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Kategori Pengeluaran</FormLabel>
-                  <Select
-                    onValueChange={(v) => field.onChange(Number(v))}
-                    value={field.value ? String(field.value) : ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih kategori..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {kategoriList.map((k) => (
-                        <SelectItem key={k.id} value={String(k.id)}>
-                          {k.namaKategori}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={kategoriOpen} onOpenChange={setKategoriOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}
+                        >
+                          {field.value
+                            ? (kategoriList.find((k) => k.id === field.value)?.namaKategori ?? "Pilih kategori...")
+                            : "Pilih kategori..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                      <Command>
+                        <CommandInput placeholder="Cari kategori..." />
+                        <CommandList>
+                          <CommandEmpty>Kategori tidak ditemukan.</CommandEmpty>
+                          <CommandGroup>
+                            {kategoriList.map((k) => (
+                              <CommandItem
+                                key={k.id}
+                                value={k.namaKategori}
+                                onSelect={() => {
+                                  field.onChange(k.id);
+                                  setKategoriOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn("mr-2 h-4 w-4", field.value === k.id ? "opacity-100" : "opacity-0")}
+                                />
+                                {k.namaKategori}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

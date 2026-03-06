@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
@@ -20,6 +20,27 @@ export async function createPembayaran(data: KasMasukFormValues) {
   const [kategoriData] = await db.select().from(kategoriKas).where(eq(kategoriKas.id, parsed.kategoriId));
 
   if (!wargaData || !kategoriData) throw new Error("Data tidak valid");
+
+  // Check for duplicate: find which selected months already have a record
+  const existing = await db
+    .select({ bulanTagihan: transaksi.bulanTagihan })
+    .from(transaksi)
+    .where(
+      and(
+        eq(transaksi.wargaId, parsed.wargaId),
+        eq(transaksi.kategoriId, parsed.kategoriId),
+        eq(transaksi.tahunTagihan, parsed.tahunTagihan),
+        eq(transaksi.tipeArus, "masuk"),
+        inArray(transaksi.bulanTagihan, parsed.bulanTagihan),
+      ),
+    );
+
+  if (existing.length > 0) {
+    const duplicateBulans = existing.map((e) => e.bulanTagihan).join(", ");
+    throw new Error(
+      `${wargaData.namaKepalaKeluarga} sudah membayar ${kategoriData.namaKategori} untuk bulan: ${duplicateBulans} tahun ${parsed.tahunTagihan}`,
+    );
+  }
 
   // Insert one transaction per selected month
   const inserted = await db
@@ -113,4 +134,25 @@ export async function getTotalPemasukanBulanIni() {
     .from(transaksi)
     .where(and(eq(transaksi.tipeArus, "masuk"), gte(transaksi.waktuTransaksi, startOfMonth)));
   return result?.total ?? 0;
+}
+
+/**
+ * Returns the list of months that a warga has already paid for a given kategori + tahun.
+ * Used by the payment form to disable already-paid months in the MonthSelector.
+ */
+export async function getAlreadyPaidBulans(wargaId: number, kategoriId: number, tahunTagihan: number) {
+  await requireAdmin();
+  if (!wargaId || !kategoriId || !tahunTagihan) return [];
+  const rows = await db
+    .select({ bulanTagihan: transaksi.bulanTagihan })
+    .from(transaksi)
+    .where(
+      and(
+        eq(transaksi.wargaId, wargaId),
+        eq(transaksi.kategoriId, kategoriId),
+        eq(transaksi.tahunTagihan, tahunTagihan),
+        eq(transaksi.tipeArus, "masuk"),
+      ),
+    );
+  return rows.map((r) => r.bulanTagihan).filter((b): b is string => b !== null);
 }

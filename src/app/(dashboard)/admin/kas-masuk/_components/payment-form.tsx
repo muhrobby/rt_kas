@@ -3,16 +3,20 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { type KasMasukFormValues, kasMasukFormSchema } from "@/lib/validations/kas-masuk";
-import { createPembayaran } from "@/server/actions/kas-masuk";
+import { createPembayaran, getAlreadyPaidBulans } from "@/server/actions/kas-masuk";
 import { getKategoriByJenis } from "@/server/actions/kategori-kas";
 import { getWargaForSelect } from "@/server/actions/warga";
 
@@ -49,6 +53,9 @@ const YEAR_OPTIONS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
 export function PaymentForm({ onSuccess }: PaymentFormProps) {
   const [wargaList, setWargaList] = useState<WargaOption[]>([]);
   const [kategoriList, setKategoriList] = useState<KategoriOption[]>([]);
+  const [paidBulans, setPaidBulans] = useState<string[]>([]);
+  const [wargaOpen, setWargaOpen] = useState(false);
+  const [kategoriOpen, setKategoriOpen] = useState(false);
 
   const form = useForm<KasMasukFormValues, unknown, KasMasukFormValues>({
     resolver: zodResolver(kasMasukFormSchema) as never,
@@ -69,7 +76,9 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
     });
   }, []);
 
+  const selectedWargaId = form.watch("wargaId");
   const selectedKategoriId = form.watch("kategoriId");
+  const selectedTahun = form.watch("tahunTagihan");
 
   // Auto-fill nominal from kategori default
   useEffect(() => {
@@ -78,6 +87,23 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
       form.setValue("nominal", kategori.nominalDefault);
     }
   }, [selectedKategoriId, kategoriList, form]);
+
+  // Fetch already-paid months whenever warga, kategori, or tahun changes
+  useEffect(() => {
+    if (selectedWargaId && selectedKategoriId && selectedTahun) {
+      getAlreadyPaidBulans(selectedWargaId, selectedKategoriId, selectedTahun).then((paid) => {
+        setPaidBulans(paid);
+        // Auto-deselect any selected months that are already paid
+        const current = form.getValues("bulanTagihan");
+        const filtered = current.filter((b) => !paid.includes(b));
+        if (filtered.length !== current.length) {
+          form.setValue("bulanTagihan", filtered);
+        }
+      });
+    } else {
+      setPaidBulans([]);
+    }
+  }, [selectedWargaId, selectedKategoriId, selectedTahun, form]);
 
   async function onSubmit(values: KasMasukFormValues) {
     try {
@@ -96,6 +122,7 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
         tahunTagihan: CURRENT_YEAR,
         keterangan: "",
       });
+      setPaidBulans([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mencatat pembayaran");
     }
@@ -109,58 +136,114 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Warga combobox */}
             <FormField
               control={form.control}
               name="wargaId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Pilih Warga</FormLabel>
-                  <Select
-                    onValueChange={(v) => field.onChange(Number(v))}
-                    value={field.value ? String(field.value) : ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih warga..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {wargaList.map((w) => (
-                        <SelectItem key={w.id} value={String(w.id)}>
-                          {w.namaKepalaKeluarga} — {w.blokRumah}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={wargaOpen} onOpenChange={setWargaOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}
+                        >
+                          {field.value
+                            ? (() => {
+                                const w = wargaList.find((x) => x.id === field.value);
+                                return w ? `${w.namaKepalaKeluarga} — ${w.blokRumah}` : "Pilih warga...";
+                              })()
+                            : "Pilih warga..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                      <Command>
+                        <CommandInput placeholder="Cari nama / blok..." />
+                        <CommandList>
+                          <CommandEmpty>Warga tidak ditemukan.</CommandEmpty>
+                          <CommandGroup>
+                            {wargaList.map((w) => (
+                              <CommandItem
+                                key={w.id}
+                                value={`${w.namaKepalaKeluarga} ${w.blokRumah}`}
+                                onSelect={() => {
+                                  field.onChange(w.id);
+                                  setWargaOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn("mr-2 h-4 w-4", field.value === w.id ? "opacity-100" : "opacity-0")}
+                                />
+                                {w.namaKepalaKeluarga} — {w.blokRumah}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
             <div className="grid grid-cols-2 gap-4">
+              {/* Kategori combobox */}
               <FormField
                 control={form.control}
                 name="kategoriId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kategori Iuran</FormLabel>
-                    <Select
-                      onValueChange={(v) => field.onChange(Number(v))}
-                      value={field.value ? String(field.value) : ""}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih kategori..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {kategoriList.map((k) => (
-                          <SelectItem key={k.id} value={String(k.id)}>
-                            {k.namaKategori}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={kategoriOpen} onOpenChange={setKategoriOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
+                          >
+                            {field.value
+                              ? (kategoriList.find((k) => k.id === field.value)?.namaKategori ?? "Pilih kategori...")
+                              : "Pilih kategori..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                        <Command>
+                          <CommandInput placeholder="Cari kategori..." />
+                          <CommandList>
+                            <CommandEmpty>Kategori tidak ditemukan.</CommandEmpty>
+                            <CommandGroup>
+                              {kategoriList.map((k) => (
+                                <CommandItem
+                                  key={k.id}
+                                  value={k.namaKategori}
+                                  onSelect={() => {
+                                    field.onChange(k.id);
+                                    setKategoriOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn("mr-2 h-4 w-4", field.value === k.id ? "opacity-100" : "opacity-0")}
+                                  />
+                                  {k.namaKategori}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -227,8 +310,15 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
               name="bulanTagihan"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bulan Tagihan</FormLabel>
-                  <MonthSelector selected={field.value} onChange={field.onChange} />
+                  <FormLabel>
+                    Bulan Tagihan
+                    {paidBulans.length > 0 && (
+                      <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
+                        ({paidBulans.length} bulan sudah dibayar)
+                      </span>
+                    )}
+                  </FormLabel>
+                  <MonthSelector selected={field.value} onChange={field.onChange} paidBulans={paidBulans} />
                   <FormMessage />
                 </FormItem>
               )}
