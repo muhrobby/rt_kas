@@ -36,8 +36,8 @@ interface KategoriFormProps {
 export function KategoriForm({ open, onOpenChange, editData, onSuccess }: KategoriFormProps) {
   const isEdit = !!editData;
 
-  const form = useForm<KategoriFormValues>({
-    resolver: zodResolver(kategoriFormSchema),
+  const form = useForm<KategoriFormValues, unknown, KategoriFormValues>({
+    resolver: zodResolver(kategoriFormSchema) as never,
     defaultValues: { namaKategori: "", jenisArus: "masuk", nominalDefault: 0 },
   });
 

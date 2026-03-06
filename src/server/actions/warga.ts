@@ -7,7 +7,7 @@ import { and, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { transaksi, warga } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
-import type { WargaFormValues } from "@/lib/validations/warga";
+import { type WargaFormValues, wargaFormSchema } from "@/lib/validations/warga";
 
 import { logActivity } from "./audit";
 
@@ -27,21 +27,22 @@ export async function getWargaById(id: number) {
 
 export async function createWarga(data: WargaFormValues) {
   const session = await requireAdmin();
+  const parsed = wargaFormSchema.parse(data);
   const [newWarga] = await db
     .insert(warga)
     .values({
-      namaKepalaKeluarga: data.namaKepalaKeluarga,
-      blokRumah: data.blokRumah,
-      noTelp: data.noTelp,
-      statusHunian: data.statusHunian,
-      tglBatasDomisili: data.tglBatasDomisili ?? null,
+      namaKepalaKeluarga: parsed.namaKepalaKeluarga,
+      blokRumah: parsed.blokRumah,
+      noTelp: parsed.noTelp,
+      statusHunian: parsed.statusHunian,
+      tglBatasDomisili: parsed.tglBatasDomisili ?? null,
     })
     .returning();
   await logActivity({
     userId: session.user.id,
     modul: "Data Warga",
     aksi: "tambah",
-    keterangan: `Menambahkan warga baru an. ${data.namaKepalaKeluarga} (${data.blokRumah})`,
+    keterangan: `Menambahkan warga baru an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
   });
   revalidatePath("/admin/warga");
   return newWarga;
@@ -49,14 +50,15 @@ export async function createWarga(data: WargaFormValues) {
 
 export async function updateWarga(id: number, data: WargaFormValues) {
   const session = await requireAdmin();
+  const parsed = wargaFormSchema.parse(data);
   const [updated] = await db
     .update(warga)
     .set({
-      namaKepalaKeluarga: data.namaKepalaKeluarga,
-      blokRumah: data.blokRumah,
-      noTelp: data.noTelp,
-      statusHunian: data.statusHunian,
-      tglBatasDomisili: data.tglBatasDomisili ?? null,
+      namaKepalaKeluarga: parsed.namaKepalaKeluarga,
+      blokRumah: parsed.blokRumah,
+      noTelp: parsed.noTelp,
+      statusHunian: parsed.statusHunian,
+      tglBatasDomisili: parsed.tglBatasDomisili ?? null,
     })
     .where(eq(warga.id, id))
     .returning();
@@ -64,7 +66,7 @@ export async function updateWarga(id: number, data: WargaFormValues) {
     userId: session.user.id,
     modul: "Data Warga",
     aksi: "edit",
-    keterangan: `Mengubah data warga an. ${data.namaKepalaKeluarga} (${data.blokRumah})`,
+    keterangan: `Mengubah data warga an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
   });
   revalidatePath("/admin/warga");
   return updated;

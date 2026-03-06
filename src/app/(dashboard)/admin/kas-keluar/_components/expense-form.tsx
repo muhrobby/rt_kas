@@ -28,8 +28,8 @@ interface ExpenseFormProps {
 export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const [kategoriList, setKategoriList] = useState<KategoriOption[]>([]);
 
-  const form = useForm<KasKeluarFormValues>({
-    resolver: zodResolver(kasKeluarFormSchema),
+  const form = useForm<KasKeluarFormValues, unknown, KasKeluarFormValues>({
+    resolver: zodResolver(kasKeluarFormSchema) as never,
     defaultValues: {
       kategoriId: 0,
       tanggal: new Date().toISOString().slice(0, 10),

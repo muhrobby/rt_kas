@@ -11,6 +11,7 @@ const MODUL_OPTIONS = [
   { value: "Kategori Kas", label: "Kategori Kas" },
   { value: "Kas Masuk", label: "Kas Masuk" },
   { value: "Kas Keluar", label: "Kas Keluar" },
+  { value: "Laporan", label: "Laporan" },
   { value: "Login", label: "Login" },
   { value: "Logout", label: "Logout" },
 ] as const;
@@ -24,15 +25,23 @@ const AKSI_OPTIONS = [
   { value: "logout", label: "Logout" },
 ] as const;
 
+export interface AdminOption {
+  id: string;
+  name: string;
+}
+
 interface LogFiltersProps {
   tanggalMulai: string;
   tanggalAkhir: string;
   modul: string;
   aksi: string;
+  petugas: string;
+  petugasList: AdminOption[];
   onTanggalMulaiChange: (v: string) => void;
   onTanggalAkhirChange: (v: string) => void;
   onModulChange: (v: string) => void;
   onAksiChange: (v: string) => void;
+  onPetugasChange: (v: string) => void;
   onFilter: () => void;
   onReset: () => void;
   loading: boolean;
@@ -43,10 +52,13 @@ export function LogFilters({
   tanggalAkhir,
   modul,
   aksi,
+  petugas,
+  petugasList,
   onTanggalMulaiChange,
   onTanggalAkhirChange,
   onModulChange,
   onAksiChange,
+  onPetugasChange,
   onFilter,
   onReset,
   loading,
@@ -99,6 +111,23 @@ export function LogFilters({
             {AKSI_OPTIONS.map((a) => (
               <SelectItem key={a.value} value={a.value}>
                 {a.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs">Petugas</Label>
+        <Select onValueChange={onPetugasChange} value={petugas}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="semua">Semua Petugas</SelectItem>
+            {petugasList.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                {a.name}
               </SelectItem>
             ))}
           </SelectContent>

@@ -39,10 +39,12 @@ export function MonthlyChart({ data, tahun }: MonthlyChartProps) {
               tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
             />
             <Tooltip
-              formatter={(value: number, name: string) => [
-                formatRupiah(value),
-                name === "masuk" ? "Pemasukan" : "Pengeluaran",
-              ]}
+              formatter={
+                ((value: number, name: string) => [
+                  formatRupiah(value),
+                  name === "masuk" ? "Pemasukan" : "Pengeluaran",
+                ]) as never
+              }
               labelStyle={{ fontWeight: 600 }}
             />
             <Bar dataKey="masuk" name="masuk" fill="var(--color-green-500, #22c55e)" radius={[4, 4, 0, 0]} />

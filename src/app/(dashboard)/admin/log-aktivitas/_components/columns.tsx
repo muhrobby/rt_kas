@@ -11,6 +11,7 @@ export interface LogRow {
   id: number;
   waktuLog: Date;
   userId: string;
+  petugasName: string;
   modul: string;
   aksi: AksiType;
   keterangan: string;
@@ -43,6 +44,11 @@ export const logColumns: ColumnDef<LogRow>[] = [
     accessorKey: "waktuLog",
     header: "Waktu",
     cell: ({ row }) => <span className="whitespace-nowrap text-sm">{formatWaktu(row.original.waktuLog)}</span>,
+  },
+  {
+    accessorKey: "petugasName",
+    header: "Petugas",
+    cell: ({ row }) => <span className="text-sm">{row.original.petugasName}</span>,
   },
   {
     accessorKey: "modul",

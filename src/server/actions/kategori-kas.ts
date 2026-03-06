@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { kategoriKas, transaksi } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
-import type { KategoriFormValues } from "@/lib/validations/kategori-kas";
+import { type KategoriFormValues, kategoriFormSchema } from "@/lib/validations/kategori-kas";
 
 import { logActivity } from "./audit";
 
@@ -29,19 +29,20 @@ export async function getKategoriById(id: number) {
 
 export async function createKategori(data: KategoriFormValues) {
   const session = await requireAdmin();
+  const parsed = kategoriFormSchema.parse(data);
   const [newKategori] = await db
     .insert(kategoriKas)
     .values({
-      namaKategori: data.namaKategori,
-      jenisArus: data.jenisArus,
-      nominalDefault: data.nominalDefault,
+      namaKategori: parsed.namaKategori,
+      jenisArus: parsed.jenisArus,
+      nominalDefault: parsed.nominalDefault,
     })
     .returning();
   await logActivity({
     userId: session.user.id,
     modul: "Kategori Kas",
     aksi: "tambah",
-    keterangan: `Menambahkan kategori kas baru: ${data.namaKategori} (${data.jenisArus})`,
+    keterangan: `Menambahkan kategori kas baru: ${parsed.namaKategori} (${parsed.jenisArus})`,
   });
   revalidatePath("/admin/kategori-kas");
   return newKategori;
@@ -49,12 +50,13 @@ export async function createKategori(data: KategoriFormValues) {
 
 export async function updateKategori(id: number, data: KategoriFormValues) {
   const session = await requireAdmin();
+  const parsed = kategoriFormSchema.parse(data);
   const [updated] = await db
     .update(kategoriKas)
     .set({
-      namaKategori: data.namaKategori,
-      jenisArus: data.jenisArus,
-      nominalDefault: data.nominalDefault,
+      namaKategori: parsed.namaKategori,
+      jenisArus: parsed.jenisArus,
+      nominalDefault: parsed.nominalDefault,
     })
     .where(eq(kategoriKas.id, id))
     .returning();
@@ -62,7 +64,7 @@ export async function updateKategori(id: number, data: KategoriFormValues) {
     userId: session.user.id,
     modul: "Kategori Kas",
     aksi: "edit",
-    keterangan: `Mengubah kategori kas: ${data.namaKategori}`,
+    keterangan: `Mengubah kategori kas: ${parsed.namaKategori}`,
   });
   revalidatePath("/admin/kategori-kas");
   return updated;

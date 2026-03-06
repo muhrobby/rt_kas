@@ -7,14 +7,15 @@ import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { kategoriKas, transaksi } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
-import type { KasKeluarFormValues } from "@/lib/validations/kas-keluar";
+import { type KasKeluarFormValues, kasKeluarFormSchema } from "@/lib/validations/kas-keluar";
 
 import { logActivity } from "./audit";
 
 export async function createPengeluaran(data: KasKeluarFormValues) {
   const session = await requireAdmin();
+  const parsed = kasKeluarFormSchema.parse(data);
 
-  const [kategoriData] = await db.select().from(kategoriKas).where(eq(kategoriKas.id, data.kategoriId));
+  const [kategoriData] = await db.select().from(kategoriKas).where(eq(kategoriKas.id, parsed.kategoriId));
   if (!kategoriData) throw new Error("Kategori tidak ditemukan");
 
   const [inserted] = await db
@@ -22,11 +23,11 @@ export async function createPengeluaran(data: KasKeluarFormValues) {
     .values({
       userId: session.user.id,
       wargaId: null,
-      kategoriId: data.kategoriId,
-      nominal: data.nominal,
+      kategoriId: parsed.kategoriId,
+      nominal: parsed.nominal,
       tipeArus: "keluar" as const,
-      keterangan: data.keterangan,
-      waktuTransaksi: new Date(data.tanggal),
+      keterangan: parsed.keterangan,
+      waktuTransaksi: new Date(parsed.tanggal),
     })
     .returning();
 
@@ -34,7 +35,7 @@ export async function createPengeluaran(data: KasKeluarFormValues) {
     userId: session.user.id,
     modul: "Kas Keluar",
     aksi: "tambah",
-    keterangan: `Mencatat pengeluaran ${kategoriData.namaKategori} Rp ${data.nominal.toLocaleString("id-ID")}: ${data.keterangan}`,
+    keterangan: `Mencatat pengeluaran ${kategoriData.namaKategori} Rp ${parsed.nominal.toLocaleString("id-ID")}: ${parsed.keterangan}`,
   });
 
   revalidatePath("/admin/kas-keluar");

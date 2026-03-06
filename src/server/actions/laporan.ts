@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, lt, lte, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
@@ -85,6 +85,23 @@ export async function getSaldoKas() {
     .select({ total: sql<number>`coalesce(sum(${transaksi.nominal}), 0)::int` })
     .from(transaksi)
     .where(eq(transaksi.tipeArus, "keluar"));
+
+  return (masuk?.total ?? 0) - (keluar?.total ?? 0);
+}
+
+export async function getSaldoAwal(bulanAwal: number, tahun: number): Promise<number> {
+  await requireAdmin();
+  const cutoffDate = new Date(tahun, bulanAwal - 1, 1); // first day of bulanAwal
+
+  const [masuk] = await db
+    .select({ total: sql<number>`coalesce(sum(${transaksi.nominal}), 0)::int` })
+    .from(transaksi)
+    .where(and(eq(transaksi.tipeArus, "masuk"), lt(transaksi.waktuTransaksi, cutoffDate)));
+
+  const [keluar] = await db
+    .select({ total: sql<number>`coalesce(sum(${transaksi.nominal}), 0)::int` })
+    .from(transaksi)
+    .where(and(eq(transaksi.tipeArus, "keluar"), lt(transaksi.waktuTransaksi, cutoffDate)));
 
   return (masuk?.total ?? 0) - (keluar?.total ?? 0);
 }

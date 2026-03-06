@@ -8,15 +8,16 @@ import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { generateRefNumber } from "@/lib/utils";
-import type { KasMasukFormValues } from "@/lib/validations/kas-masuk";
+import { type KasMasukFormValues, kasMasukFormSchema } from "@/lib/validations/kas-masuk";
 
 import { logActivity } from "./audit";
 
 export async function createPembayaran(data: KasMasukFormValues) {
   const session = await requireAdmin();
+  const parsed = kasMasukFormSchema.parse(data);
 
-  const [wargaData] = await db.select().from(warga).where(eq(warga.id, data.wargaId));
-  const [kategoriData] = await db.select().from(kategoriKas).where(eq(kategoriKas.id, data.kategoriId));
+  const [wargaData] = await db.select().from(warga).where(eq(warga.id, parsed.wargaId));
+  const [kategoriData] = await db.select().from(kategoriKas).where(eq(kategoriKas.id, parsed.kategoriId));
 
   if (!wargaData || !kategoriData) throw new Error("Data tidak valid");
 
@@ -24,25 +25,25 @@ export async function createPembayaran(data: KasMasukFormValues) {
   const inserted = await db
     .insert(transaksi)
     .values(
-      data.bulanTagihan.map((bulan) => ({
+      parsed.bulanTagihan.map((bulan) => ({
         userId: session.user.id,
-        wargaId: data.wargaId,
-        kategoriId: data.kategoriId,
+        wargaId: parsed.wargaId,
+        kategoriId: parsed.kategoriId,
         bulanTagihan: bulan,
-        tahunTagihan: data.tahunTagihan,
-        nominal: data.nominal,
+        tahunTagihan: parsed.tahunTagihan,
+        nominal: parsed.nominal,
         tipeArus: "masuk" as const,
-        keterangan: data.keterangan ?? `Iuran ${kategoriData.namaKategori} bulan ${bulan} ${data.tahunTagihan}`,
+        keterangan: parsed.keterangan ?? `Iuran ${kategoriData.namaKategori} bulan ${bulan} ${parsed.tahunTagihan}`,
       })),
     )
     .returning();
 
-  const bulanStr = data.bulanTagihan.join(", ");
+  const bulanStr = parsed.bulanTagihan.join(", ");
   await logActivity({
     userId: session.user.id,
     modul: "Kas Masuk",
     aksi: "tambah",
-    keterangan: `Mencatat iuran ${kategoriData.namaKategori} Rp ${data.nominal.toLocaleString("id-ID")} untuk ${wargaData.namaKepalaKeluarga} (${wargaData.blokRumah}) bulan ${bulanStr} ${data.tahunTagihan}`,
+    keterangan: `Mencatat iuran ${kategoriData.namaKategori} Rp ${parsed.nominal.toLocaleString("id-ID")} untuk ${wargaData.namaKepalaKeluarga} (${wargaData.blokRumah}) bulan ${bulanStr} ${parsed.tahunTagihan}`,
   });
 
   revalidatePath("/admin/kas-masuk");

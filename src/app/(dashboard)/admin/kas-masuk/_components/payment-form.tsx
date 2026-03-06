@@ -50,8 +50,8 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
   const [wargaList, setWargaList] = useState<WargaOption[]>([]);
   const [kategoriList, setKategoriList] = useState<KategoriOption[]>([]);
 
-  const form = useForm<KasMasukFormValues>({
-    resolver: zodResolver(kasMasukFormSchema),
+  const form = useForm<KasMasukFormValues, unknown, KasMasukFormValues>({
+    resolver: zodResolver(kasMasukFormSchema) as never,
     defaultValues: {
       wargaId: 0,
       kategoriId: 0,

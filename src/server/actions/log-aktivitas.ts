@@ -3,7 +3,7 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 
 import { db } from "@/db";
-import { logAktivitas } from "@/db/schema";
+import { logAktivitas, user } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 
 export interface LogFilters {
@@ -48,4 +48,9 @@ export async function getLogList(filters?: LogFilters) {
 export async function getRecentActivity(limit = 5) {
   await requireAdmin();
   return db.select().from(logAktivitas).orderBy(desc(logAktivitas.waktuLog)).limit(limit);
+}
+
+export async function getAdminList() {
+  await requireAdmin();
+  return db.select({ id: user.id, name: user.name }).from(user).where(eq(user.role, "admin")).orderBy(user.name);
 }
