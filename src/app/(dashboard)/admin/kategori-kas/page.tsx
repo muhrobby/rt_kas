@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { SearchIcon, XIcon } from "lucide-react";
 
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { getKategoriList } from "@/server/actions/kategori-kas";
 
 import { getColumns, type KategoriRow } from "./_components/columns";
@@ -42,11 +45,9 @@ export default function KategoriKasPage() {
     (row) => setDeleteTarget(row),
   );
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  const table = useDataTableInstance({ data, columns, enableRowSelection: false });
+
+  const searchValue = (table.getColumn("namaKategori")?.getFilterValue() as string) ?? "";
 
   return (
     <div className="space-y-4">
@@ -65,6 +66,25 @@ export default function KategoriKasPage() {
         </Button>
       </div>
 
+      <div className="relative max-w-sm">
+        <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Cari nama kategori..."
+          value={searchValue}
+          onChange={(e) => table.getColumn("namaKategori")?.setFilterValue(e.target.value)}
+          className="pr-9 pl-9"
+        />
+        {searchValue && (
+          <button
+            type="button"
+            onClick={() => table.getColumn("namaKategori")?.setFilterValue("")}
+            className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -74,36 +94,10 @@ export default function KategoriKasPage() {
               ))}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((hg) => (
-                  <TableRow key={hg.id}>
-                    {hg.headers.map((h) => (
-                      <TableHead key={h.id}>
-                        {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="py-10 text-center">
-                      <p className="text-muted-foreground">Belum ada kategori kas.</p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <div className="flex flex-col gap-4 py-4">
+              <DataTable table={table} columns={columns} />
+              <DataTablePagination table={table} />
+            </div>
           )}
         </CardContent>
       </Card>

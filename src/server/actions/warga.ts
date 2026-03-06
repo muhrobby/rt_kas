@@ -2,12 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
+import { generateId } from "better-auth";
+import { hashPassword } from "better-auth/crypto";
 import { and, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { transaksi, warga } from "@/db/schema";
-import { user } from "@/db/schema/auth";
-import { auth } from "@/lib/auth";
+import { account, user } from "@/db/schema/auth";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { type WargaFormValues, wargaFormSchema } from "@/lib/validations/warga";
 
@@ -48,18 +49,27 @@ export async function createWarga(data: WargaFormValues) {
     })
     .returning();
 
-  // Auto-create login account: username = noTelp, password = noTelp
+  // Auto-create login account using direct Drizzle insert (bypasses disableSignUp)
   try {
-    await auth.api.signUpEmail({
-      body: {
-        name: parsed.namaKepalaKeluarga,
-        email: `${parsed.noTelp}@kas-rt.local`,
-        password: parsed.noTelp,
-        username: parsed.noTelp,
-      },
+    const pwHash = await hashPassword(parsed.noTelp);
+    const uid = generateId();
+    await db.insert(user).values({
+      id: uid,
+      name: parsed.namaKepalaKeluarga,
+      email: `${parsed.noTelp}@kas-rt.local`,
+      emailVerified: true,
+      username: parsed.noTelp,
+      displayUsername: parsed.noTelp,
+      role: "user",
+      wargaId: newWarga.id,
     });
-    // Link user account to warga and set role
-    await db.update(user).set({ role: "user", wargaId: newWarga.id }).where(eq(user.username, parsed.noTelp));
+    await db.insert(account).values({
+      id: generateId(),
+      userId: uid,
+      accountId: uid,
+      providerId: "credential",
+      password: pwHash,
+    });
   } catch (err) {
     // Roll back warga insert if user creation fails
     await db.delete(warga).where(eq(warga.id, newWarga.id));

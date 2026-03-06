@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { formatRupiah, formatTanggal } from "@/lib/utils";
 import { getRecentPengeluaran } from "@/server/actions/kas-keluar";
 
@@ -15,6 +19,33 @@ type ExpenseItem = {
   keterangan: string | null;
   namaKategori: string | null;
 };
+
+const columns: ColumnDef<ExpenseItem>[] = [
+  {
+    accessorKey: "waktuTransaksi",
+    header: "Tanggal",
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap text-muted-foreground text-sm">
+        {formatTanggal(row.original.waktuTransaksi)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "namaKategori",
+    header: "Kategori",
+    cell: ({ row }) => <span className="text-sm">{row.original.namaKategori ?? "-"}</span>,
+  },
+  {
+    accessorKey: "keterangan",
+    header: "Keterangan",
+    cell: ({ row }) => <span className="max-w-xs truncate text-sm">{row.original.keterangan ?? "-"}</span>,
+  },
+  {
+    accessorKey: "nominal",
+    header: "Nominal",
+    cell: ({ row }) => <span className="font-medium text-red-500">{formatRupiah(row.original.nominal)}</span>,
+  },
+];
 
 interface RecentExpensesProps {
   refreshKey?: number;
@@ -32,6 +63,8 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
       .finally(() => setLoading(false));
   }, [refreshKey]);
 
+  const table = useDataTableInstance({ data: items, columns, enableRowSelection: false, defaultPageSize: 10 });
+
   return (
     <Card>
       <CardHeader>
@@ -40,35 +73,17 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
       <CardContent className="p-0">
         {loading ? (
           <div className="space-y-2 p-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-full" />
+            {["sk-1", "sk-2", "sk-3", "sk-4"].map((k) => (
+              <Skeleton key={k} className="h-8 w-full" />
             ))}
           </div>
         ) : items.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground text-sm">Belum ada pengeluaran tercatat.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Kategori</TableHead>
-                <TableHead>Keterangan</TableHead>
-                <TableHead className="text-right">Nominal</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="whitespace-nowrap text-muted-foreground text-sm">
-                    {formatTanggal(item.waktuTransaksi)}
-                  </TableCell>
-                  <TableCell className="text-sm">{item.namaKategori ?? "-"}</TableCell>
-                  <TableCell className="max-w-xs truncate text-sm">{item.keterangan ?? "-"}</TableCell>
-                  <TableCell className="text-right font-medium text-red-500">{formatRupiah(item.nominal)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="flex flex-col gap-4 py-4">
+            <DataTable table={table} columns={columns} />
+            <DataTablePagination table={table} />
+          </div>
         )}
       </CardContent>
     </Card>

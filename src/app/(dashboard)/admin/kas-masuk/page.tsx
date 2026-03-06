@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 
+import { Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
 import { EKuitansiDialog } from "./_components/e-kuitansi-dialog";
 import { PaymentForm } from "./_components/payment-form";
 import { TodayHistory } from "./_components/today-history";
@@ -16,6 +21,7 @@ interface PaymentResult {
 }
 
 export default function KasMasukPage() {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [kuitansi, setKuitansi] = useState<{
     refNumber: string;
@@ -30,6 +36,7 @@ export default function KasMasukPage() {
 
   function handleSuccess(result: PaymentResult) {
     const nominal = result.inserted[0]?.nominal ?? 0;
+    setDialogOpen(false);
     setKuitansi({
       refNumber: result.refNumber,
       wargaData: result.wargaData,
@@ -45,15 +52,29 @@ export default function KasMasukPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-semibold text-2xl">Kas Masuk</h1>
-        <p className="text-muted-foreground text-sm">Catat pembayaran iuran warga.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-semibold text-2xl">Kas Masuk</h1>
+          <p className="text-muted-foreground text-sm">Catat pembayaran iuran warga.</p>
+        </div>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Tambah Pembayaran
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Pembayaran Iuran Warga</DialogTitle>
+            </DialogHeader>
+            <PaymentForm onSuccess={handleSuccess} />
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <PaymentForm onSuccess={handleSuccess} />
-        <TodayHistory refreshKey={refreshKey} />
-      </div>
+      <TodayHistory refreshKey={refreshKey} />
 
       <EKuitansiDialog open={kuitansiOpen} onOpenChange={setKuitansiOpen} data={kuitansi} />
     </div>

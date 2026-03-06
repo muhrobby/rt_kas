@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -129,207 +128,195 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Pembayaran Iuran Warga</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Warga combobox */}
-            <FormField
-              control={form.control}
-              name="wargaId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Pilih Warga</FormLabel>
-                  <Popover open={wargaOpen} onOpenChange={setWargaOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}
-                        >
-                          {field.value
-                            ? (() => {
-                                const w = wargaList.find((x) => x.id === field.value);
-                                return w ? `${w.namaKepalaKeluarga} — ${w.blokRumah}` : "Pilih warga...";
-                              })()
-                            : "Pilih warga..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                      <Command>
-                        <CommandInput placeholder="Cari nama / blok..." />
-                        <CommandList>
-                          <CommandEmpty>Warga tidak ditemukan.</CommandEmpty>
-                          <CommandGroup>
-                            {wargaList.map((w) => (
-                              <CommandItem
-                                key={w.id}
-                                value={`${w.namaKepalaKeluarga} ${w.blokRumah}`}
-                                onSelect={() => {
-                                  field.onChange(w.id);
-                                  setWargaOpen(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn("mr-2 h-4 w-4", field.value === w.id ? "opacity-100" : "opacity-0")}
-                                />
-                                {w.namaKepalaKeluarga} — {w.blokRumah}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Kategori combobox */}
-              <FormField
-                control={form.control}
-                name="kategoriId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kategori Iuran</FormLabel>
-                    <Popover open={kategoriOpen} onOpenChange={setKategoriOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between font-normal",
-                              !field.value && "text-muted-foreground",
-                            )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Warga combobox */}
+        <FormField
+          control={form.control}
+          name="wargaId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pilih Warga</FormLabel>
+              <Popover open={wargaOpen} onOpenChange={setWargaOpen}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}
+                    >
+                      {field.value
+                        ? (() => {
+                            const w = wargaList.find((x) => x.id === field.value);
+                            return w ? `${w.namaKepalaKeluarga} — ${w.blokRumah}` : "Pilih warga...";
+                          })()
+                        : "Pilih warga..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command>
+                    <CommandInput placeholder="Cari nama / blok..." />
+                    <CommandList>
+                      <CommandEmpty>Warga tidak ditemukan.</CommandEmpty>
+                      <CommandGroup>
+                        {wargaList.map((w) => (
+                          <CommandItem
+                            key={w.id}
+                            value={`${w.namaKepalaKeluarga} ${w.blokRumah}`}
+                            onSelect={() => {
+                              field.onChange(w.id);
+                              setWargaOpen(false);
+                            }}
                           >
-                            {field.value
-                              ? (kategoriList.find((k) => k.id === field.value)?.namaKategori ?? "Pilih kategori...")
-                              : "Pilih kategori..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                        <Command>
-                          <CommandInput placeholder="Cari kategori..." />
-                          <CommandList>
-                            <CommandEmpty>Kategori tidak ditemukan.</CommandEmpty>
-                            <CommandGroup>
-                              {kategoriList.map((k) => (
-                                <CommandItem
-                                  key={k.id}
-                                  value={k.namaKategori}
-                                  onSelect={() => {
-                                    field.onChange(k.id);
-                                    setKategoriOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn("mr-2 h-4 w-4", field.value === k.id ? "opacity-100" : "opacity-0")}
-                                  />
-                                  {k.namaKategori}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="nominal"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nominal (Rp)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} placeholder="50000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="tahunTagihan"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tahun</FormLabel>
-                    <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {YEAR_OPTIONS.map((y) => (
-                          <SelectItem key={y} value={String(y)}>
-                            {y}
-                          </SelectItem>
+                            <Check className={cn("mr-2 h-4 w-4", field.value === w.id ? "opacity-100" : "opacity-0")} />
+                            {w.namaKepalaKeluarga} — {w.blokRumah}
+                          </CommandItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-              <FormField
-                control={form.control}
-                name="keterangan"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Keterangan (Opsional)</FormLabel>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Kategori combobox */}
+          <FormField
+            control={form.control}
+            name="kategoriId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kategori Iuran</FormLabel>
+                <Popover open={kategoriOpen} onOpenChange={setKategoriOpen}>
+                  <PopoverTrigger asChild>
                     <FormControl>
-                      <Input placeholder="Catatan tambahan..." {...field} />
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}
+                      >
+                        {field.value
+                          ? (kategoriList.find((k) => k.id === field.value)?.namaKategori ?? "Pilih kategori...")
+                          : "Pilih kategori..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                    <Command>
+                      <CommandInput placeholder="Cari kategori..." />
+                      <CommandList>
+                        <CommandEmpty>Kategori tidak ditemukan.</CommandEmpty>
+                        <CommandGroup>
+                          {kategoriList.map((k) => (
+                            <CommandItem
+                              key={k.id}
+                              value={k.namaKategori}
+                              onSelect={() => {
+                                field.onChange(k.id);
+                                setKategoriOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn("mr-2 h-4 w-4", field.value === k.id ? "opacity-100" : "opacity-0")}
+                              />
+                              {k.namaKategori}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="nominal"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nominal (Rp)</FormLabel>
+                <FormControl>
+                  <Input type="number" min={0} placeholder="50000" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="tahunTagihan"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tahun</FormLabel>
+                <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {YEAR_OPTIONS.map((y) => (
+                      <SelectItem key={y} value={String(y)}>
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="keterangan"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Keterangan (Opsional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Catatan tambahan..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="bulanTagihan"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Bulan Tagihan
+                {paidBulans.length > 0 && (
+                  <span className="ml-2 font-normal text-green-600 text-xs dark:text-green-400">
+                    ({paidBulans.length} bulan sudah dibayar)
+                  </span>
                 )}
-              />
-            </div>
+              </FormLabel>
+              <MonthSelector selected={field.value} onChange={field.onChange} paidBulans={paidBulans} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="bulanTagihan"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Bulan Tagihan
-                    {paidBulans.length > 0 && (
-                      <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
-                        ({paidBulans.length} bulan sudah dibayar)
-                      </span>
-                    )}
-                  </FormLabel>
-                  <MonthSelector selected={field.value} onChange={field.onChange} paidBulans={paidBulans} />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Menyimpan..." : "Simpan Pembayaran"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? "Menyimpan..." : "Simpan Pembayaran"}
+        </Button>
+      </form>
+    </Form>
   );
 }

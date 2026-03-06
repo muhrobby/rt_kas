@@ -1,7 +1,74 @@
+"use client";
+
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { formatRupiah, formatTanggal } from "@/lib/utils";
 import type { RekapItem } from "@/server/actions/laporan";
+
+interface RekapItemWithBalance extends RekapItem {
+  saldo: number;
+  no: number;
+}
+
+const columns: ColumnDef<RekapItemWithBalance>[] = [
+  {
+    accessorKey: "no",
+    header: "No",
+    cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.no}</span>,
+    size: 48,
+  },
+  {
+    accessorKey: "waktuTransaksi",
+    header: "Tanggal",
+    cell: ({ row }) => <span className="whitespace-nowrap text-sm">{formatTanggal(row.original.waktuTransaksi)}</span>,
+  },
+  {
+    accessorKey: "keterangan",
+    header: "Uraian / Keterangan",
+    cell: ({ row }) => (
+      <div className="max-w-xs text-sm">
+        <div>{row.original.keterangan ?? "-"}</div>
+        {row.original.namaWarga && (
+          <div className="text-muted-foreground text-xs">
+            {row.original.namaWarga} — {row.original.blokRumah}
+          </div>
+        )}
+        {row.original.namaKategori && <div className="text-muted-foreground text-xs">{row.original.namaKategori}</div>}
+      </div>
+    ),
+  },
+  {
+    id: "pemasukan",
+    header: "Pemasukan (Rp)",
+    cell: ({ row }) => (
+      <span className="text-right text-green-600">
+        {row.original.tipeArus === "masuk" ? formatRupiah(row.original.nominal) : "-"}
+      </span>
+    ),
+  },
+  {
+    id: "pengeluaran",
+    header: "Pengeluaran (Rp)",
+    cell: ({ row }) => (
+      <span className="text-right text-red-500">
+        {row.original.tipeArus === "keluar" ? formatRupiah(row.original.nominal) : "-"}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "saldo",
+    header: "Saldo (Rp)",
+    cell: ({ row }) => (
+      <span className={`text-right font-medium ${row.original.saldo >= 0 ? "" : "text-red-500"}`}>
+        {formatRupiah(row.original.saldo)}
+      </span>
+    ),
+  },
+];
 
 interface ReportTableProps {
   data: RekapItem[];
@@ -19,58 +86,27 @@ export function ReportTable({ data }: ReportTableProps) {
   }
 
   let runningBalance = 0;
+  const dataWithBalance: RekapItemWithBalance[] = data.map((item, index) => {
+    if (item.tipeArus === "masuk") {
+      runningBalance += item.nominal;
+    } else {
+      runningBalance -= item.nominal;
+    }
+    return { ...item, saldo: runningBalance, no: index + 1 };
+  });
+
+  return <ReportTableInner data={dataWithBalance} />;
+}
+
+function ReportTableInner({ data }: { data: RekapItemWithBalance[] }) {
+  const table = useDataTableInstance({ data, columns, enableRowSelection: false, defaultPageSize: 20 });
 
   return (
     <Card>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">No</TableHead>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Uraian / Keterangan</TableHead>
-                <TableHead className="text-right">Pemasukan (Rp)</TableHead>
-                <TableHead className="text-right">Pengeluaran (Rp)</TableHead>
-                <TableHead className="text-right">Saldo (Rp)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((item, index) => {
-                if (item.tipeArus === "masuk") {
-                  runningBalance += item.nominal;
-                } else {
-                  runningBalance -= item.nominal;
-                }
-                const balanceSnapshot = runningBalance;
-
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell className="text-muted-foreground text-sm">{index + 1}</TableCell>
-                    <TableCell className="whitespace-nowrap text-sm">{formatTanggal(item.waktuTransaksi)}</TableCell>
-                    <TableCell className="max-w-xs text-sm">
-                      <div>{item.keterangan ?? "-"}</div>
-                      {item.namaWarga && (
-                        <div className="text-muted-foreground text-xs">
-                          {item.namaWarga} — {item.blokRumah}
-                        </div>
-                      )}
-                      {item.namaKategori && <div className="text-muted-foreground text-xs">{item.namaKategori}</div>}
-                    </TableCell>
-                    <TableCell className="text-right text-green-600">
-                      {item.tipeArus === "masuk" ? formatRupiah(item.nominal) : "-"}
-                    </TableCell>
-                    <TableCell className="text-right text-red-500">
-                      {item.tipeArus === "keluar" ? formatRupiah(item.nominal) : "-"}
-                    </TableCell>
-                    <TableCell className={`text-right font-medium ${balanceSnapshot >= 0 ? "" : "text-red-500"}`}>
-                      {formatRupiah(balanceSnapshot)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+        <div className="flex flex-col gap-4 py-4">
+          <DataTable table={table} columns={columns} />
+          <DataTablePagination table={table} />
         </div>
       </CardContent>
     </Card>

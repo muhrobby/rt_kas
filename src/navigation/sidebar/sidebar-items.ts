@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   ArrowDownCircle,
   ArrowUpCircle,
   ClipboardList,
@@ -52,6 +53,7 @@ export const adminSidebarItems: NavGroup[] = [
     items: [
       { title: "Kas Masuk", url: "/admin/kas-masuk", icon: ArrowDownCircle },
       { title: "Kas Keluar", url: "/admin/kas-keluar", icon: ArrowUpCircle },
+      { title: "Tunggakan", url: "/admin/tunggakan", icon: AlertCircle },
     ],
   },
   {

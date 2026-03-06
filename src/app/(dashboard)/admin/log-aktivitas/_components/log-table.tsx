@@ -1,10 +1,10 @@
 "use client";
 
-import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 
 import { type LogRow, logColumns } from "./columns";
 
@@ -14,7 +14,7 @@ interface LogTableProps {
 }
 
 export function LogTable({ data, loading }: LogTableProps) {
-  const table = useReactTable({ data, columns: logColumns, getCoreRowModel: getCoreRowModel() });
+  const table = useDataTableInstance({ data, columns: logColumns, enableRowSelection: false });
 
   return (
     <Card>
@@ -26,37 +26,9 @@ export function LogTable({ data, loading }: LogTableProps) {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((hg) => (
-                  <TableRow key={hg.id}>
-                    {hg.headers.map((h) => (
-                      <TableHead key={h.id}>
-                        {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={logColumns.length} className="py-12 text-center">
-                      <p className="text-muted-foreground">Tidak ada log aktivitas ditemukan.</p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="flex flex-col gap-4 py-4">
+            <DataTable table={table} columns={logColumns} />
+            <DataTablePagination table={table} />
           </div>
         )}
       </CardContent>

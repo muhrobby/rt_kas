@@ -2,21 +2,23 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { SearchIcon, XIcon } from "lucide-react";
 
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { getWargaList } from "@/server/actions/warga";
 
 import { getColumns, type WargaRow } from "./_components/columns";
 import { DeleteWargaDialog } from "./_components/delete-warga-dialog";
 import { WargaForm } from "./_components/warga-form";
-import { WargaTableToolbar } from "./_components/warga-table-toolbar";
 
 export default function WargaPage() {
   const [data, setData] = useState<WargaRow[]>([]);
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<WargaRow | null>(null);
@@ -25,16 +27,15 @@ export default function WargaPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getWargaList(search || undefined);
+      const result = await getWargaList();
       setData(result as WargaRow[]);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, []);
 
   useEffect(() => {
-    const t = setTimeout(load, 300);
-    return () => clearTimeout(t);
+    load();
   }, [load]);
 
   const columns = getColumns(
@@ -45,11 +46,9 @@ export default function WargaPage() {
     (row) => setDeleteTarget(row),
   );
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  const table = useDataTableInstance({ data, columns, enableRowSelection: false });
+
+  const searchValue = (table.getColumn("namaKepalaKeluarga")?.getFilterValue() as string) ?? "";
 
   return (
     <div className="space-y-4">
@@ -58,14 +57,34 @@ export default function WargaPage() {
         <p className="text-muted-foreground text-sm">Kelola data kepala keluarga di lingkungan RT.</p>
       </div>
 
-      <WargaTableToolbar
-        search={search}
-        onSearchChange={setSearch}
-        onAdd={() => {
-          setEditData(null);
-          setFormOpen(true);
-        }}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative max-w-sm flex-1">
+          <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Cari nama kepala keluarga..."
+            value={searchValue}
+            onChange={(e) => table.getColumn("namaKepalaKeluarga")?.setFilterValue(e.target.value)}
+            className="pr-9 pl-9"
+          />
+          {searchValue && (
+            <button
+              type="button"
+              onClick={() => table.getColumn("namaKepalaKeluarga")?.setFilterValue("")}
+              className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
+            >
+              <XIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <Button
+          onClick={() => {
+            setEditData(null);
+            setFormOpen(true);
+          }}
+        >
+          + Tambah Warga
+        </Button>
+      </div>
 
       <Card>
         <CardContent className="p-0">
@@ -76,43 +95,13 @@ export default function WargaPage() {
               ))}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((hg) => (
-                  <TableRow key={hg.id}>
-                    {hg.headers.map((h) => (
-                      <TableHead key={h.id}>
-                        {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="py-10 text-center">
-                      <p className="text-muted-foreground">Tidak ada data warga ditemukan.</p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <div className="flex flex-col gap-4 py-4">
+              <DataTable table={table} columns={columns} />
+              <DataTablePagination table={table} />
+            </div>
           )}
         </CardContent>
       </Card>
-
-      <p className="text-muted-foreground text-sm">
-        Menampilkan {data.length} warga{search ? ` untuk pencarian "${search}"` : ""}
-      </p>
 
       <WargaForm open={formOpen} onOpenChange={setFormOpen} editData={editData} onSuccess={load} />
 
