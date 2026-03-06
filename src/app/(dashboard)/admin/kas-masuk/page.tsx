@@ -30,12 +30,15 @@ export default function KasMasukPage() {
     bulanTagihan: string[];
     tahunTagihan: number;
     nominal: number;
+    totalDibayar: number;
+    keterangan?: string | null;
     tanggal: Date;
   } | null>(null);
   const [kuitansiOpen, setKuitansiOpen] = useState(false);
 
   function handleSuccess(result: PaymentResult) {
     const nominal = result.inserted[0]?.nominal ?? 0;
+    const totalDibayar = result.bulanTagihan.length > 0 ? nominal * result.bulanTagihan.length : nominal;
     setDialogOpen(false);
     setKuitansi({
       refNumber: result.refNumber,
@@ -44,6 +47,7 @@ export default function KasMasukPage() {
       bulanTagihan: result.bulanTagihan,
       tahunTagihan: result.tahunTagihan,
       nominal,
+      totalDibayar,
       tanggal: new Date(),
     });
     setKuitansiOpen(true);
