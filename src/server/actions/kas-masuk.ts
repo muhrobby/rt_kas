@@ -21,6 +21,38 @@ export async function createPembayaran(data: KasMasukFormValues) {
 
   if (!wargaData || !kategoriData) throw new Error("Data tidak valid");
 
+  const isSekali = parsed.bulanTagihan.length === 0;
+
+  if (isSekali) {
+    // One-time payment: insert a single transaction with null bulanTagihan and null tahunTagihan
+    const [inserted] = await db
+      .insert(transaksi)
+      .values({
+        userId: session.user.id,
+        wargaId: parsed.wargaId,
+        kategoriId: parsed.kategoriId,
+        bulanTagihan: null,
+        tahunTagihan: null,
+        nominal: parsed.nominal,
+        tipeArus: "masuk" as const,
+        keterangan: parsed.keterangan ?? `${kategoriData.namaKategori} — ${wargaData.namaKepalaKeluarga}`,
+      })
+      .returning();
+
+    if (!inserted) throw new Error("Gagal menyimpan transaksi");
+
+    await logActivity({
+      userId: session.user.id,
+      modul: "Kas Masuk",
+      aksi: "tambah",
+      keterangan: `Mencatat iuran ${kategoriData.namaKategori} Rp ${parsed.nominal.toLocaleString("id-ID")} (sekali bayar) untuk ${wargaData.namaKepalaKeluarga} (${wargaData.blokRumah})`,
+    });
+
+    revalidatePath("/admin/kas-masuk");
+
+    return { inserted: [inserted], refNumber: generateRefNumber(), wargaData, kategoriData };
+  }
+
   // Check for duplicate: find which selected months already have a record
   const existing = await db
     .select({ bulanTagihan: transaksi.bulanTagihan })

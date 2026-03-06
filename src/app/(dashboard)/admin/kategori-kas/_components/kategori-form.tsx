@@ -38,7 +38,7 @@ export function KategoriForm({ open, onOpenChange, editData, onSuccess }: Katego
 
   const form = useForm<KategoriFormValues, unknown, KategoriFormValues>({
     resolver: zodResolver(kategoriFormSchema) as never,
-    defaultValues: { namaKategori: "", jenisArus: "masuk", nominalDefault: 0 },
+    defaultValues: { namaKategori: "", jenisArus: "masuk", nominalDefault: 0, tipeTagihan: "bulanan" },
   });
 
   useEffect(() => {
@@ -49,8 +49,9 @@ export function KategoriForm({ open, onOpenChange, editData, onSuccess }: Katego
               namaKategori: editData.namaKategori,
               jenisArus: editData.jenisArus,
               nominalDefault: editData.nominalDefault ?? 0,
+              tipeTagihan: editData.tipeTagihan,
             }
-          : { namaKategori: "", jenisArus: "masuk", nominalDefault: 0 },
+          : { namaKategori: "", jenisArus: "masuk", nominalDefault: 0, tipeTagihan: "bulanan" },
       );
     }
   }, [open, editData, form]);
@@ -109,6 +110,28 @@ export function KategoriForm({ open, onOpenChange, editData, onSuccess }: Katego
                     <SelectContent>
                       <SelectItem value="masuk">Masuk (Pemasukan)</SelectItem>
                       <SelectItem value="keluar">Keluar (Pengeluaran)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tipeTagihan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipe Tagihan</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih tipe tagihan" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="bulanan">Bulanan (Iuran Rutin)</SelectItem>
+                      <SelectItem value="sekali">Sekali Bayar (Event / Insidental)</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

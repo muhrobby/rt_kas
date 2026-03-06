@@ -32,6 +32,7 @@ interface KategoriOption {
   id: number;
   namaKategori: string;
   nominalDefault: number | null;
+  tipeTagihan: "bulanan" | "sekali";
 }
 
 interface PaymentResult {
@@ -80,6 +81,9 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
   const selectedKategoriId = form.watch("kategoriId");
   const selectedTahun = form.watch("tahunTagihan");
 
+  const selectedKategori = kategoriList.find((k) => k.id === selectedKategoriId);
+  const isSekali = selectedKategori?.tipeTagihan === "sekali";
+
   // Auto-fill nominal from kategori default
   useEffect(() => {
     const kategori = kategoriList.find((k) => k.id === selectedKategoriId);
@@ -88,9 +92,17 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
     }
   }, [selectedKategoriId, kategoriList, form]);
 
-  // Fetch already-paid months whenever warga, kategori, or tahun changes
+  // Clear bulan selection when switching to sekali type
   useEffect(() => {
-    if (selectedWargaId && selectedKategoriId && selectedTahun) {
+    if (isSekali) {
+      form.setValue("bulanTagihan", []);
+      setPaidBulans([]);
+    }
+  }, [isSekali, form]);
+
+  // Fetch already-paid months whenever warga, kategori, or tahun changes (only for bulanan)
+  useEffect(() => {
+    if (!isSekali && selectedWargaId && selectedKategoriId && selectedTahun) {
       getAlreadyPaidBulans(selectedWargaId, selectedKategoriId, selectedTahun).then((paid) => {
         setPaidBulans(paid);
         // Auto-deselect any selected months that are already paid
@@ -103,14 +115,24 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
     } else {
       setPaidBulans([]);
     }
-  }, [selectedWargaId, selectedKategoriId, selectedTahun, form]);
+  }, [selectedWargaId, selectedKategoriId, selectedTahun, isSekali, form]);
 
-  function handleKategoriCreated(kategori: { id: number; namaKategori: string; nominalDefault: number | null }) {
+  function handleKategoriCreated(kategori: {
+    id: number;
+    namaKategori: string;
+    nominalDefault: number | null;
+    tipeTagihan: "bulanan" | "sekali";
+  }) {
     setKategoriList((prev) => [...prev, kategori]);
     form.setValue("kategoriId", kategori.id);
   }
 
   async function onSubmit(values: KasMasukFormValues) {
+    // Validate: for bulanan, at least one bulan must be selected
+    if (!isSekali && values.bulanTagihan.length === 0) {
+      form.setError("bulanTagihan", { message: "Pilih minimal satu bulan" });
+      return;
+    }
     try {
       const result = await createPembayaran(values);
       toast.success("Pembayaran berhasil dicatat");
@@ -262,32 +284,50 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="tahunTagihan"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tahun</FormLabel>
-                <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {YEAR_OPTIONS.map((y) => (
-                      <SelectItem key={y} value={String(y)}>
-                        {y}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {!isSekali && (
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="tahunTagihan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tahun</FormLabel>
+                  <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {YEAR_OPTIONS.map((y) => (
+                        <SelectItem key={y} value={String(y)}>
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            <FormField
+              control={form.control}
+              name="keterangan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Keterangan (Opsional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Catatan tambahan..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+
+        {isSekali && (
           <FormField
             control={form.control}
             name="keterangan"
@@ -301,26 +341,28 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
               </FormItem>
             )}
           />
-        </div>
+        )}
 
-        <FormField
-          control={form.control}
-          name="bulanTagihan"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Bulan Tagihan
-                {paidBulans.length > 0 && (
-                  <span className="ml-2 font-normal text-green-600 text-xs dark:text-green-400">
-                    ({paidBulans.length} bulan sudah dibayar)
-                  </span>
-                )}
-              </FormLabel>
-              <MonthSelector selected={field.value} onChange={field.onChange} paidBulans={paidBulans} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!isSekali && (
+          <FormField
+            control={form.control}
+            name="bulanTagihan"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Bulan Tagihan
+                  {paidBulans.length > 0 && (
+                    <span className="ml-2 font-normal text-green-600 text-xs dark:text-green-400">
+                      ({paidBulans.length} bulan sudah dibayar)
+                    </span>
+                  )}
+                </FormLabel>
+                <MonthSelector selected={field.value} onChange={field.onChange} paidBulans={paidBulans} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? "Menyimpan..." : "Simpan Pembayaran"}

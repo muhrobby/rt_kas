@@ -36,6 +36,7 @@ export async function createKategori(data: KategoriFormValues) {
       namaKategori: parsed.namaKategori,
       jenisArus: parsed.jenisArus,
       nominalDefault: parsed.nominalDefault,
+      tipeTagihan: parsed.tipeTagihan,
     })
     .returning();
   await logActivity({
@@ -57,6 +58,7 @@ export async function updateKategori(id: number, data: KategoriFormValues) {
       namaKategori: parsed.namaKategori,
       jenisArus: parsed.jenisArus,
       nominalDefault: parsed.nominalDefault,
+      tipeTagihan: parsed.tipeTagihan,
     })
     .where(eq(kategoriKas.id, id))
     .returning();

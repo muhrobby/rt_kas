@@ -11,14 +11,20 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type KategoriFormValues, kategoriFormSchema } from "@/lib/validations/kategori-kas";
 import { createKategori } from "@/server/actions/kategori-kas";
 
 interface QuickAddKategoriDialogProps {
   /** "masuk" untuk Kas Masuk, "keluar" untuk Kas Keluar */
   jenisArus: "masuk" | "keluar";
-  /** Dipanggil setelah kategori berhasil dibuat, membawa id dan nama kategori baru */
-  onCreated: (kategori: { id: number; namaKategori: string; nominalDefault: number | null }) => void;
+  /** Dipanggil setelah kategori berhasil dibuat, membawa id, nama, nominal, dan tipeTagihan */
+  onCreated: (kategori: {
+    id: number;
+    namaKategori: string;
+    nominalDefault: number | null;
+    tipeTagihan: "bulanan" | "sekali";
+  }) => void;
 }
 
 export function QuickAddKategoriDialog({ jenisArus, onCreated }: QuickAddKategoriDialogProps) {
@@ -30,6 +36,7 @@ export function QuickAddKategoriDialog({ jenisArus, onCreated }: QuickAddKategor
       namaKategori: "",
       jenisArus,
       nominalDefault: 0,
+      tipeTagihan: "bulanan",
     },
   });
 
@@ -42,9 +49,10 @@ export function QuickAddKategoriDialog({ jenisArus, onCreated }: QuickAddKategor
         id: created.id,
         namaKategori: created.namaKategori,
         nominalDefault: created.nominalDefault ?? null,
+        tipeTagihan: created.tipeTagihan,
       });
       setOpen(false);
-      form.reset({ namaKategori: "", jenisArus, nominalDefault: 0 });
+      form.reset({ namaKategori: "", jenisArus, nominalDefault: 0, tipeTagihan: "bulanan" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal membuat kategori");
     }
@@ -77,6 +85,29 @@ export function QuickAddKategoriDialog({ jenisArus, onCreated }: QuickAddKategor
                 </FormItem>
               )}
             />
+            {jenisArus === "masuk" && (
+              <FormField
+                control={form.control}
+                name="tipeTagihan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipe Tagihan</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih tipe tagihan" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="bulanan">Bulanan (Iuran Rutin)</SelectItem>
+                        <SelectItem value="sekali">Sekali Bayar (Event / Insidental)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="nominalDefault"

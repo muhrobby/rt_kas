@@ -12,6 +12,7 @@ export interface KategoriRow {
   namaKategori: string;
   jenisArus: "masuk" | "keluar";
   nominalDefault: number | null;
+  tipeTagihan: "bulanan" | "sekali";
   createdAt: Date;
 }
 
@@ -37,6 +38,15 @@ export function getColumns(
       cell: ({ row }) => (
         <Badge variant={row.original.jenisArus === "masuk" ? "default" : "destructive"}>
           {row.original.jenisArus === "masuk" ? "Masuk" : "Keluar"}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "tipeTagihan",
+      header: "Tipe Tagihan",
+      cell: ({ row }) => (
+        <Badge variant={row.original.tipeTagihan === "bulanan" ? "secondary" : "outline"}>
+          {row.original.tipeTagihan === "bulanan" ? "Bulanan" : "Sekali Bayar"}
         </Badge>
       ),
     },
