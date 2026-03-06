@@ -4,6 +4,26 @@ Dokumen ini merangkum seluruh perubahan yang pernah dilakukan pada proyek ini, d
 
 ---
 
+## [f03d0bc] feat: refactor e-kuitansi into professional invoice with real PDF download
+**Tanggal:** 2026-03-06
+
+### Ringkasan
+Mengganti tampilan E-Kuitansi dari `window.print()` menjadi **invoice profesional** dengan kemampuan unduh file PDF nyata menggunakan `@react-pdf/renderer`. Sekaligus memperbaiki bug total = 0 pada pembayaran sekali bayar.
+
+### File yang Diubah / Ditambah
+
+| File | Perubahan |
+|---|---|
+| `src/lib/pdf/kuitansi-template.tsx` | **BARU** — Komponen PDF A5 portrait: header org (biru) + badge LUNAS, tabel item, summary box dengan strip total biru, note box keterangan, dan footer timestamp cetak. Mendukung mode `bulanan` (qty = jumlah bulan) dan `sekali` (qty = 1). |
+| `src/app/api/kuitansi/pdf/route.ts` | **BARU** — GET `/api/kuitansi/pdf`: menerima parameter via query string, render PDF via `renderToBuffer`, return `Response` dengan `Content-Type: application/pdf` dan `Content-Disposition: attachment`. |
+| `src/app/(dashboard)/admin/kas-masuk/_components/e-kuitansi-dialog.tsx` | **DIREFACTOR** — Interface `EKuitansiData` diperluas dengan `totalDibayar: number` dan `keterangan?: string | null`. Preview dialog diperbarui agar konsisten secara visual dengan PDF. Tombol unduh menggantikan `window.print()`: fetch ke API → `URL.createObjectURL` → auto-download. |
+| `src/app/(dashboard)/admin/kas-masuk/page.tsx` | Tambah `totalDibayar` ke tipe state `kuitansi`. Di `handleSuccess`: hitung `totalDibayar = nominal * bulanTagihan.length` untuk bulanan, atau `totalDibayar = nominal` untuk sekali bayar. |
+
+### Bug yang Diperbaiki
+- **Total = 0 untuk sekali bayar**: Sebelumnya dihitung `nominal * bulanTagihan.length` di dialog, dan untuk sekali bayar `bulanTagihan = []` sehingga hasilnya 0. Sekarang dihitung di `handleSuccess` di `page.tsx` dengan logika kondisional yang benar.
+
+---
+
 ## [be4a799] feat: add tipeTagihan (bulanan/sekali) to kategori kas and conditional month selector in kas masuk form
 **Tanggal:** 2026-03-06
 
