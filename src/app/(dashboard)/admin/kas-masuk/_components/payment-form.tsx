@@ -7,6 +7,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { QuickAddKategoriDialog } from "@/components/quick-add-kategori-dialog";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -104,6 +105,11 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
     }
   }, [selectedWargaId, selectedKategoriId, selectedTahun, form]);
 
+  function handleKategoriCreated(kategori: { id: number; namaKategori: string; nominalDefault: number | null }) {
+    setKategoriList((prev) => [...prev, kategori]);
+    form.setValue("kategoriId", kategori.id);
+  }
+
   async function onSubmit(values: KasMasukFormValues) {
     try {
       const result = await createPembayaran(values);
@@ -191,7 +197,10 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
             name="kategoriId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Kategori Iuran</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Kategori Iuran</FormLabel>
+                  <QuickAddKategoriDialog jenisArus="masuk" onCreated={handleKategoriCreated} />
+                </div>
                 <Popover open={kategoriOpen} onOpenChange={setKategoriOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
