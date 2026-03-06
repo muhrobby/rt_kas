@@ -40,7 +40,13 @@ interface TunggakanTableProps {
 }
 
 export function TunggakanTable({ data }: TunggakanTableProps) {
-  const table = useDataTableInstance({ data, columns, enableRowSelection: false, defaultPageSize: 20 });
+  const table = useDataTableInstance({
+    data,
+    columns,
+    enableRowSelection: false,
+    defaultPageSize: 20,
+    getRowId: (row) => String(row.wargaId),
+  });
 
   if (data.length === 0) {
     return (
