@@ -15,18 +15,39 @@ export interface TunggakanRow {
 }
 
 export interface TunggakanFilters {
-  tahunTagihan: number;
-  bulanTagihan: string;
   kategoriId: number;
+  tipeTagihan: "bulanan" | "sekali";
+  /** Only used when tipeTagihan === "bulanan" */
+  tahunTagihan: number;
+  /** Only used when tipeTagihan === "bulanan" */
+  bulanTagihan: string;
 }
 
 /**
- * Returns list of warga who have NOT paid for a given bulan + tahun + kategori.
- * Query: all warga LEFT JOIN transaksi masuk on (wargaId + kategoriId + bulan + tahun),
- * then filter where transaksi.id IS NULL.
+ * Returns list of warga who have NOT paid for a given kategori.
+ *
+ * For bulanan: joins on (wargaId + kategoriId + bulanTagihan + tahunTagihan).
+ * For sekali:  joins on (wargaId + kategoriId) only — bulan/tahun are NULL for one-time payments.
+ * Both cases use LEFT JOIN + WHERE transaksi.id IS NULL.
  */
 export async function getTunggakan(filters: TunggakanFilters): Promise<TunggakanRow[]> {
   await requireAdmin();
+
+  const joinCondition =
+    filters.tipeTagihan === "sekali"
+      ? and(
+          eq(transaksi.wargaId, warga.id),
+          eq(transaksi.kategoriId, filters.kategoriId),
+          eq(transaksi.tipeArus, "masuk"),
+          isNull(transaksi.bulanTagihan),
+        )
+      : and(
+          eq(transaksi.wargaId, warga.id),
+          eq(transaksi.kategoriId, filters.kategoriId),
+          eq(transaksi.bulanTagihan, filters.bulanTagihan),
+          eq(transaksi.tahunTagihan, filters.tahunTagihan),
+          eq(transaksi.tipeArus, "masuk"),
+        );
 
   const rows = await db
     .select({
@@ -38,16 +59,7 @@ export async function getTunggakan(filters: TunggakanFilters): Promise<Tunggakan
       transaksiId: transaksi.id,
     })
     .from(warga)
-    .leftJoin(
-      transaksi,
-      and(
-        eq(transaksi.wargaId, warga.id),
-        eq(transaksi.kategoriId, filters.kategoriId),
-        eq(transaksi.bulanTagihan, filters.bulanTagihan),
-        eq(transaksi.tahunTagihan, filters.tahunTagihan),
-        eq(transaksi.tipeArus, "masuk"),
-      ),
-    )
+    .leftJoin(transaksi, joinCondition)
     .where(isNull(transaksi.id))
     .orderBy(warga.blokRumah, warga.namaKepalaKeluarga);
 
@@ -61,12 +73,12 @@ export async function getTunggakan(filters: TunggakanFilters): Promise<Tunggakan
 }
 
 /**
- * Returns all kategori masuk for the filter selector.
+ * Returns all kategori masuk for the filter selector, including tipeTagihan.
  */
 export async function getKategoriMasukForSelect() {
   await requireAdmin();
   return db
-    .select({ id: kategoriKas.id, namaKategori: kategoriKas.namaKategori })
+    .select({ id: kategoriKas.id, namaKategori: kategoriKas.namaKategori, tipeTagihan: kategoriKas.tipeTagihan })
     .from(kategoriKas)
     .where(eq(kategoriKas.jenisArus, "masuk"))
     .orderBy(kategoriKas.namaKategori);

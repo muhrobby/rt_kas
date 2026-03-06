@@ -37,9 +37,10 @@ const columns: ColumnDef<TunggakanRow>[] = [
 
 interface TunggakanTableProps {
   data: TunggakanRow[];
+  tipeTagihan: "bulanan" | "sekali" | null;
 }
 
-export function TunggakanTable({ data }: TunggakanTableProps) {
+export function TunggakanTable({ data, tipeTagihan }: TunggakanTableProps) {
   const table = useDataTableInstance({
     data,
     columns,
@@ -49,11 +50,11 @@ export function TunggakanTable({ data }: TunggakanTableProps) {
   });
 
   if (data.length === 0) {
-    return (
-      <p className="py-12 text-center text-muted-foreground text-sm">
-        Semua warga sudah membayar untuk bulan dan kategori yang dipilih.
-      </p>
-    );
+    const emptyMsg =
+      tipeTagihan === "sekali"
+        ? "Semua warga sudah membayar untuk event ini."
+        : "Semua warga sudah membayar untuk bulan dan kategori yang dipilih.";
+    return <p className="py-12 text-center text-muted-foreground text-sm">{emptyMsg}</p>;
   }
 
   return (

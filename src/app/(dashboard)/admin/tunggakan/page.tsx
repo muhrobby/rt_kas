@@ -21,21 +21,39 @@ export default function TunggakanPage() {
   const [selectedTahun, setSelectedTahun] = useState(CURRENT_YEAR);
   const [selectedBulan, setSelectedBulan] = useState<string>(CURRENT_BULAN);
   const [selectedKategoriId, setSelectedKategoriId] = useState(0);
+  const [selectedTipeTagihan, setSelectedTipeTagihan] = useState<"bulanan" | "sekali" | null>(null);
   const [data, setData] = useState<TunggakanRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
 
+  function handleKategoriChange(id: number, tipe: "bulanan" | "sekali") {
+    setSelectedKategoriId(id);
+    setSelectedTipeTagihan(tipe);
+    setFetched(false);
+    setData([]);
+  }
+
   useEffect(() => {
-    if (!selectedKategoriId) return;
+    if (!selectedKategoriId || !selectedTipeTagihan) return;
     setLoading(true);
     setFetched(false);
-    getTunggakan({ tahunTagihan: selectedTahun, bulanTagihan: selectedBulan, kategoriId: selectedKategoriId })
+    getTunggakan({
+      kategoriId: selectedKategoriId,
+      tipeTagihan: selectedTipeTagihan,
+      tahunTagihan: selectedTahun,
+      bulanTagihan: selectedBulan,
+    })
       .then((rows) => {
         setData(rows);
         setFetched(true);
       })
       .finally(() => setLoading(false));
-  }, [selectedTahun, selectedBulan, selectedKategoriId]);
+  }, [selectedTahun, selectedBulan, selectedKategoriId, selectedTipeTagihan]);
+
+  const cardTitle =
+    selectedTipeTagihan === "sekali"
+      ? "Warga Belum Bayar — Event Sekali Bayar"
+      : `Warga Belum Bayar — ${selectedBulan} ${selectedTahun}`;
 
   return (
     <div className="space-y-6">
@@ -48,24 +66,27 @@ export default function TunggakanPage() {
         tahun={selectedTahun}
         bulan={selectedBulan}
         kategoriId={selectedKategoriId}
+        tipeTagihan={selectedTipeTagihan}
         onTahunChange={setSelectedTahun}
         onBulanChange={setSelectedBulan}
-        onKategoriChange={setSelectedKategoriId}
+        onKategoriChange={handleKategoriChange}
       />
 
       {!selectedKategoriId && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Pilih tahun, bulan, dan kategori iuran untuk melihat data tunggakan.</AlertDescription>
+          <AlertDescription>
+            {selectedTipeTagihan === "sekali"
+              ? "Pilih kategori iuran untuk melihat data tunggakan event."
+              : "Pilih tahun, bulan, dan kategori iuran untuk melihat data tunggakan."}
+          </AlertDescription>
         </Alert>
       )}
 
       {selectedKategoriId > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">
-              Warga Belum Bayar — {selectedBulan} {selectedTahun}
-            </CardTitle>
+            <CardTitle className="text-base">{cardTitle}</CardTitle>
             {fetched && !loading && (
               <Badge variant={data.length === 0 ? "default" : "destructive"}>{data.length} warga</Badge>
             )}
@@ -79,7 +100,7 @@ export default function TunggakanPage() {
               </div>
             ) : (
               <div className="p-4">
-                <TunggakanTable data={data} />
+                <TunggakanTable data={data} tipeTagihan={selectedTipeTagihan} />
               </div>
             )}
           </CardContent>
