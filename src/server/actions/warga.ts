@@ -6,6 +6,8 @@ import { and, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { transaksi, warga } from "@/db/schema";
+import { user } from "@/db/schema/auth";
+import { auth } from "@/lib/auth";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { type WargaFormValues, wargaFormSchema } from "@/lib/validations/warga";
 
@@ -28,6 +30,13 @@ export async function getWargaById(id: number) {
 export async function createWarga(data: WargaFormValues) {
   const session = await requireAdmin();
   const parsed = wargaFormSchema.parse(data);
+
+  // Check if username (noTelp) is already taken
+  const [existingUser] = await db.select({ id: user.id }).from(user).where(eq(user.username, parsed.noTelp));
+  if (existingUser) {
+    throw new Error(`Nomor telepon ${parsed.noTelp} sudah digunakan sebagai akun login`);
+  }
+
   const [newWarga] = await db
     .insert(warga)
     .values({
@@ -38,6 +47,25 @@ export async function createWarga(data: WargaFormValues) {
       tglBatasDomisili: parsed.tglBatasDomisili ?? null,
     })
     .returning();
+
+  // Auto-create login account: username = noTelp, password = noTelp
+  try {
+    await auth.api.signUpEmail({
+      body: {
+        name: parsed.namaKepalaKeluarga,
+        email: `${parsed.noTelp}@kas-rt.local`,
+        password: parsed.noTelp,
+        username: parsed.noTelp,
+      },
+    });
+    // Link user account to warga and set role
+    await db.update(user).set({ role: "user", wargaId: newWarga.id }).where(eq(user.username, parsed.noTelp));
+  } catch (err) {
+    // Roll back warga insert if user creation fails
+    await db.delete(warga).where(eq(warga.id, newWarga.id));
+    throw new Error(`Gagal membuat akun login: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   await logActivity({
     userId: session.user.id,
     modul: "Data Warga",
@@ -45,12 +73,37 @@ export async function createWarga(data: WargaFormValues) {
     keterangan: `Menambahkan warga baru an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
   });
   revalidatePath("/admin/warga");
-  return newWarga;
+  return { ...newWarga, defaultPassword: parsed.noTelp };
 }
 
 export async function updateWarga(id: number, data: WargaFormValues) {
   const session = await requireAdmin();
   const parsed = wargaFormSchema.parse(data);
+
+  const [existing] = await db.select().from(warga).where(eq(warga.id, id));
+  if (!existing) throw new Error("Warga tidak ditemukan");
+
+  // If noTelp changed, update username on the linked user account
+  if (existing.noTelp !== parsed.noTelp) {
+    // Ensure new noTelp is not already taken by another user
+    const [conflict] = await db.select({ id: user.id }).from(user).where(eq(user.username, parsed.noTelp));
+    if (conflict) {
+      throw new Error(`Nomor telepon ${parsed.noTelp} sudah digunakan sebagai akun login`);
+    }
+    await db
+      .update(user)
+      .set({
+        username: parsed.noTelp,
+        displayUsername: parsed.noTelp,
+        email: `${parsed.noTelp}@kas-rt.local`,
+        name: parsed.namaKepalaKeluarga,
+      })
+      .where(eq(user.wargaId, id));
+  } else if (existing.namaKepalaKeluarga !== parsed.namaKepalaKeluarga) {
+    // Sync name change to linked user
+    await db.update(user).set({ name: parsed.namaKepalaKeluarga }).where(eq(user.wargaId, id));
+  }
+
   const [updated] = await db
     .update(warga)
     .set({
@@ -76,6 +129,10 @@ export async function deleteWarga(id: number) {
   const session = await requireAdmin();
   const [existing] = await db.select().from(warga).where(eq(warga.id, id));
   if (!existing) throw new Error("Warga tidak ditemukan");
+
+  // Delete linked user account (sessions cascade via FK)
+  await db.delete(user).where(eq(user.wargaId, id));
+
   await db.delete(warga).where(eq(warga.id, id));
   await logActivity({
     userId: session.user.id,

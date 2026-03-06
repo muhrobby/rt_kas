@@ -67,8 +67,11 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
         await updateWarga(editData.id, values);
         toast.success("Data warga berhasil diperbarui");
       } else {
-        await createWarga(values);
-        toast.success("Warga baru berhasil ditambahkan");
+        const result = await createWarga(values);
+        toast.success(
+          `Warga baru berhasil ditambahkan. Akun login: username "${result.noTelp}", password "${result.defaultPassword}"`,
+          { duration: 8000 },
+        );
       }
       onSuccess();
       onOpenChange(false);
