@@ -104,12 +104,8 @@ export async function createPembayaran(data: KasMasukFormValues) {
   return { inserted, refNumber: generateRefNumber(), wargaData, kategoriData };
 }
 
-export async function getTodayPemasukan() {
+export async function getRecentPemasukan() {
   await requireAdmin();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
   return db
     .select({
@@ -126,14 +122,9 @@ export async function getTodayPemasukan() {
     .from(transaksi)
     .leftJoin(warga, eq(transaksi.wargaId, warga.id))
     .leftJoin(kategoriKas, eq(transaksi.kategoriId, kategoriKas.id))
-    .where(
-      and(
-        eq(transaksi.tipeArus, "masuk"),
-        gte(transaksi.waktuTransaksi, today),
-        lte(transaksi.waktuTransaksi, tomorrow),
-      ),
-    )
-    .orderBy(desc(transaksi.waktuTransaksi));
+    .where(eq(transaksi.tipeArus, "masuk"))
+    .orderBy(desc(transaksi.waktuTransaksi))
+    .limit(50);
 }
 
 export async function getPembayaranDetail(id: number) {

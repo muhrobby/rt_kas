@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 import { EKuitansiDialog } from "./_components/e-kuitansi-dialog";
 import { PaymentForm } from "./_components/payment-form";
-import { TodayHistory } from "./_components/today-history";
+import { RecentHistory } from "./_components/recent-history";
 
 interface PaymentResult {
   refNumber: string;
@@ -78,7 +78,7 @@ export default function KasMasukPage() {
         </Dialog>
       </div>
 
-      <TodayHistory refreshKey={refreshKey} />
+      <RecentHistory refreshKey={refreshKey} />
 
       <EKuitansiDialog open={kuitansiOpen} onOpenChange={setKuitansiOpen} data={kuitansi} />
     </div>

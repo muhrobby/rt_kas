@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -96,7 +96,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
                 <FormItem>
                   <FormLabel>Nama Kepala Keluarga</FormLabel>
                   <FormControl>
-                    <Input placeholder="Bpk. Ahmad Sudarto" {...field} />
+                    <Input placeholder="Bpk. Ahmad Sudarto" autoComplete="name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -111,7 +111,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
                   <FormItem>
                     <FormLabel>Blok Rumah</FormLabel>
                     <FormControl>
-                      <Input placeholder="A1" {...field} />
+                      <Input placeholder="A1" autoCapitalize="characters" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -125,7 +125,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
                   <FormItem>
                     <FormLabel>No. Telepon / WhatsApp</FormLabel>
                     <FormControl>
-                      <Input placeholder="081234567890" {...field} />
+                      <Input placeholder="081234567890" type="tel" inputMode="numeric" autoComplete="tel" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -95,12 +95,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -178,12 +174,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -193,9 +185,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -303,16 +293,12 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         },
         "user_username_unique": {
           "name": "user_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -555,12 +541,8 @@
           "name": "transaksi_warga_id_warga_id_fk",
           "tableFrom": "transaksi",
           "tableTo": "warga",
-          "columnsFrom": [
-            "warga_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["warga_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -568,12 +550,8 @@
           "name": "transaksi_kategori_id_kategori_kas_id_fk",
           "tableFrom": "transaksi",
           "tableTo": "kategori_kas",
-          "columnsFrom": [
-            "kategori_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["kategori_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -654,45 +632,27 @@
     "public.jenis_arus": {
       "name": "jenis_arus",
       "schema": "public",
-      "values": [
-        "masuk",
-        "keluar"
-      ]
+      "values": ["masuk", "keluar"]
     },
     "public.tipe_tagihan": {
       "name": "tipe_tagihan",
       "schema": "public",
-      "values": [
-        "bulanan",
-        "sekali"
-      ]
+      "values": ["bulanan", "sekali"]
     },
     "public.aksi": {
       "name": "aksi",
       "schema": "public",
-      "values": [
-        "tambah",
-        "edit",
-        "hapus",
-        "login",
-        "logout"
-      ]
+      "values": ["tambah", "edit", "hapus", "login", "logout"]
     },
     "public.tipe_arus": {
       "name": "tipe_arus",
       "schema": "public",
-      "values": [
-        "masuk",
-        "keluar"
-      ]
+      "values": ["masuk", "keluar"]
     },
     "public.status_hunian": {
       "name": "status_hunian",
       "schema": "public",
-      "values": [
-        "tetap",
-        "kontrak"
-      ]
+      "values": ["tetap", "kontrak"]
     }
   },
   "schemas": {},

@@ -225,7 +225,7 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Kategori combobox */}
           <FormField
             control={form.control}
@@ -289,7 +289,7 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
               <FormItem>
                 <FormLabel>Nominal (Rp)</FormLabel>
                 <FormControl>
-                  <Input type="number" min={0} placeholder="50000" {...field} />
+                  <Input type="number" inputMode="numeric" pattern="[0-9]*" min={0} placeholder="50000" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -298,7 +298,7 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
         </div>
 
         {!isSekali && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
               name="tahunTagihan"
