@@ -30,10 +30,10 @@ export function EKuitansiView({ transaksiId, onClose }: EKuitansiViewProps) {
       .finally(() => setLoading(false));
   }, [transaksiId]);
 
-  const bulanLabel =
+  const periodeLabel =
     detail?.bulanTagihan && detail?.tahunTagihan
       ? `${BULAN_NAMES[Number(detail.bulanTagihan) - 1]} ${detail.tahunTagihan}`
-      : "-";
+      : "Sekali Bayar";
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && onClose()} direction="bottom">
@@ -45,9 +45,8 @@ export function EKuitansiView({ transaksiId, onClose }: EKuitansiViewProps) {
         <div className="space-y-1 px-6 pb-2">
           {loading || !detail ? (
             <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
-                <Skeleton key={i} className="h-5 w-full" />
+              {["sk-1", "sk-2", "sk-3", "sk-4", "sk-5", "sk-6"].map((k) => (
+                <Skeleton key={k} className="h-5 w-full" />
               ))}
             </div>
           ) : (
@@ -64,7 +63,7 @@ export function EKuitansiView({ transaksiId, onClose }: EKuitansiViewProps) {
               <Row label="Warga" value={detail.namaWarga} />
               <Row label="Blok / No." value={detail.blokRumah} />
               <Row label="Kategori" value={detail.namaKategori} />
-              <Row label="Bulan" value={bulanLabel} />
+              <Row label="Periode" value={periodeLabel} />
               <Row label="Nominal" value={formatRupiah(detail.nominal)} bold />
               <div className="my-2 border-t border-dashed" />
               <Row label="Dicatat oleh" value={detail.dicatatOleh} />

@@ -5,6 +5,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
 import { requireAuth, requireWarga } from "@/lib/auth-helpers";
+import { BULAN_NAMES } from "@/lib/utils";
 
 export interface WargaProfile {
   id: number;
@@ -78,19 +79,30 @@ export async function getBillingStatus(month: number, year: number): Promise<Bil
 
   const categories = await db.select().from(kategoriKas).where(eq(kategoriKas.jenisArus, "masuk"));
 
-  const payments = await db
+  // Fetch bulanan payments for this month/year
+  // bulanTagihan is stored as month name (e.g. "Maret"), not as a number string
+  const bulanName = BULAN_NAMES[month - 1];
+  if (!bulanName) return [];
+  const bulananPayments = await db
     .select({ id: transaksi.id, kategoriId: transaksi.kategoriId })
     .from(transaksi)
     .where(
       and(
         eq(transaksi.wargaId, wargaId),
         eq(transaksi.tipeArus, "masuk"),
-        eq(transaksi.bulanTagihan, String(month)),
+        eq(transaksi.bulanTagihan, bulanName),
         eq(transaksi.tahunTagihan, year),
       ),
     );
 
+  // Fetch sekali-bayar payments (no month/year filter — just wargaId + kategoriId)
+  const sekaliPayments = await db
+    .select({ id: transaksi.id, kategoriId: transaksi.kategoriId })
+    .from(transaksi)
+    .where(and(eq(transaksi.wargaId, wargaId), eq(transaksi.tipeArus, "masuk")));
+
   return categories.map((kat) => {
+    const payments = kat.tipeTagihan === "sekali" ? sekaliPayments : bulananPayments;
     const paid = payments.find((p) => p.kategoriId === kat.id);
     return {
       kategoriId: kat.id,

@@ -2,30 +2,33 @@
 
 import { useCallback, useState } from "react";
 
-import type { PaymentGridByKategori } from "@/server/actions/warga-riwayat";
+import type { PaymentGridByKategori, PeriodOption } from "@/server/actions/warga-riwayat";
 import { getPaymentGrid } from "@/server/actions/warga-riwayat";
 
 import { EKuitansiView } from "./e-kuitansi-view";
 import { PaymentHistory } from "./payment-history";
-import { YearSelector } from "./year-selector";
+import { PeriodSelector } from "./period-selector";
 
 interface RiwayatShellProps {
-  initialYear: number;
-  initialYears: number[];
+  initialBulan: number;
+  initialTahun: number;
+  initialPeriods: PeriodOption[];
   initialGrids: PaymentGridByKategori[];
 }
 
-export function RiwayatShell({ initialYear, initialYears, initialGrids }: RiwayatShellProps) {
-  const [selectedYear, setSelectedYear] = useState(initialYear);
+export function RiwayatShell({ initialBulan, initialTahun, initialPeriods, initialGrids }: RiwayatShellProps) {
+  const [selectedBulan, setSelectedBulan] = useState(initialBulan);
+  const [selectedTahun, setSelectedTahun] = useState(initialTahun);
   const [grids, setGrids] = useState<PaymentGridByKategori[]>(initialGrids);
   const [loading, setLoading] = useState(false);
   const [selectedTransaksiId, setSelectedTransaksiId] = useState<number | null>(null);
 
-  const handleYearChange = useCallback(async (year: number) => {
-    setSelectedYear(year);
+  const handlePeriodChange = useCallback(async (bulan: number, tahun: number) => {
+    setSelectedBulan(bulan);
+    setSelectedTahun(tahun);
     setLoading(true);
     try {
-      const newGrids = await getPaymentGrid(year);
+      const newGrids = await getPaymentGrid(bulan, tahun);
       setGrids(newGrids);
     } finally {
       setLoading(false);
@@ -34,14 +37,20 @@ export function RiwayatShell({ initialYear, initialYears, initialGrids }: Riwaya
 
   return (
     <>
-      <YearSelector years={initialYears} selectedYear={selectedYear} onYearChange={handleYearChange} />
+      <PeriodSelector
+        periods={initialPeriods}
+        selectedBulan={selectedBulan}
+        selectedTahun={selectedTahun}
+        onPeriodChange={handlePeriodChange}
+      />
 
       {loading ? (
         <div className="py-8 text-center text-muted-foreground text-sm">Memuat data...</div>
       ) : (
         <PaymentHistory
           grids={grids}
-          selectedYear={selectedYear}
+          selectedBulan={selectedBulan}
+          selectedTahun={selectedTahun}
           onKuitansiClick={(id: number) => setSelectedTransaksiId(id)}
         />
       )}

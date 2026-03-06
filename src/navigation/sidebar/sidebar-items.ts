@@ -11,7 +11,6 @@ import {
   Tags,
   Users,
 } from "lucide-react";
-
 export interface NavSubItem {
   title: string;
   url: string;
@@ -73,6 +72,7 @@ export const wargaSidebarItems: NavGroup[] = [
     items: [
       { title: "Dashboard", url: "/warga/dashboard", icon: Home },
       { title: "Riwayat Pembayaran", url: "/warga/riwayat", icon: Receipt },
+      { title: "Laporan Keuangan", url: "/warga/laporan", icon: FileText },
     ],
   },
 ];
