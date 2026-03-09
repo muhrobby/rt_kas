@@ -43,6 +43,7 @@ export const adminSidebarItems: NavGroup[] = [
     items: [
       { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
       { title: "Data Warga", url: "/admin/warga", icon: Users },
+      { title: "Pengurus", url: "/admin/pengurus", icon: Users },
       { title: "Kategori Kas", url: "/admin/kategori-kas", icon: Tags },
     ],
   },

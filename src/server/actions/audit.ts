@@ -1,7 +1,15 @@
 import { db } from "@/db";
 import { logAktivitas } from "@/db/schema";
 
-export type AuditModul = "Data Warga" | "Kategori Kas" | "Kas Masuk" | "Kas Keluar" | "Laporan" | "Login" | "Logout";
+export type AuditModul =
+  | "Data Warga"
+  | "Kategori Kas"
+  | "Kas Masuk"
+  | "Kas Keluar"
+  | "Laporan"
+  | "Login"
+  | "Logout"
+  | "Pengurus";
 
 export type AuditAksi = "tambah" | "edit" | "hapus" | "login" | "logout";
 

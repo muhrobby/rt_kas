@@ -17,6 +17,7 @@ import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { type ColumnDef, flexRender, type Table as TanStackTable } from "@tanstack/react-table";
 
+import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 import { DraggableRow } from "./draggable-row";
@@ -42,8 +43,12 @@ function renderTableBody<TData, TValue>({
   if (!table.getRowModel().rows.length) {
     return (
       <TableRow>
-        <TableCell colSpan={columns.length} className="h-24 text-center">
-          No results.
+        <TableCell colSpan={columns.length} className="h-64 text-center">
+          <EmptyState
+            title="Data Tidak Ditemukan"
+            description="Tidak ada data yang dapat ditampilkan untuk saat ini."
+            className="border-none"
+          />
         </TableCell>
       </TableRow>
     );

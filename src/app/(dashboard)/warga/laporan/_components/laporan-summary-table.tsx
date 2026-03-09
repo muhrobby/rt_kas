@@ -87,7 +87,8 @@ export function LaporanSummaryTable({ data, tahun }: LaporanSummaryTableProps) {
           <CardTitle className="text-xl">Rekapitulasi Bulanan — Tahun {tahun}</CardTitle>
         </CardHeader>
         <CardContent className="p-0 sm:p-6 sm:pt-0">
-          <div className="overflow-x-auto">
+          {/* DESKTOP VIEW */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
@@ -131,6 +132,47 @@ export function LaporanSummaryTable({ data, tahun }: LaporanSummaryTableProps) {
                 })}
               </TableBody>
             </Table>
+          </div>
+
+          {/* MOBILE CARD VIEW */}
+          <div className="md:hidden flex flex-col gap-3 p-4">
+            {data.map((row) => {
+              const sisa = row.masuk - row.keluar;
+              const isNegative = sisa < 0;
+              const namaBulan = BULAN_NAMES[row.bulan - 1] ?? `Bulan ${row.bulan}`;
+              const hasExpenses = row.keluar > 0;
+
+              return (
+                <div
+                  key={row.bulan}
+                  className={`rounded-xl border bg-card p-4 shadow-sm ${hasExpenses ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}`}
+                  onClick={() => handleRowClick(row.bulan, namaBulan, row.keluar)}
+                >
+                  <div className="flex items-center justify-between mb-3 border-b pb-2">
+                    <h3 className="font-semibold text-base">{namaBulan}</h3>
+                    <span
+                      className={`text-sm font-bold ${
+                        isNegative ? "text-red-600" : sisa > 0 ? "text-emerald-700" : "text-muted-foreground"
+                      }`}
+                    >
+                      Sisa: {isNegative ? `-${formatRupiah(Math.abs(sisa))}` : sisa > 0 ? formatRupiah(sisa) : "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">Pemasukan</span>
+                    <span className="font-medium text-green-600">{row.masuk > 0 ? formatRupiah(row.masuk) : "-"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Pengeluaran</span>
+                    <span
+                      className={`font-medium ${hasExpenses ? "text-red-500 underline decoration-red-500/30 underline-offset-4" : "text-muted-foreground"}`}
+                    >
+                      {hasExpenses ? formatRupiah(row.keluar) : "-"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
