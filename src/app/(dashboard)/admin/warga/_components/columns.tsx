@@ -15,6 +15,7 @@ export interface WargaRow {
   statusHunian: "tetap" | "kontrak";
   tglBatasDomisili: string | null;
   createdAt: Date;
+  isAdmin: boolean;
 }
 
 function isDomicileExpiringSoon(tgl: string | null): boolean {
@@ -37,6 +38,22 @@ export function getColumns(onEdit: (row: WargaRow) => void, onDelete: (row: Warg
       accessorKey: "namaKepalaKeluarga",
       header: "Nama Kepala Keluarga",
       cell: ({ row }) => <span className="font-medium">{row.original.namaKepalaKeluarga}</span>,
+    },
+    {
+      id: "peran",
+      header: "Peran",
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.isAdmin ? "default" : "outline"}
+          className={
+            row.original.isAdmin
+              ? "bg-amber-500 hover:bg-amber-600 border-transparent text-white"
+              : "text-muted-foreground"
+          }
+        >
+          {row.original.isAdmin ? "Pengurus RT" : "Warga Biasa"}
+        </Badge>
+      ),
     },
     {
       accessorKey: "blokRumah",

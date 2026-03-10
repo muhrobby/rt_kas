@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { type WargaFormValues, wargaFormSchema } from "@/lib/validations/warga";
 import { createWarga, updateWarga } from "@/server/actions/warga";
 
@@ -33,7 +34,8 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
       blokRumah: "",
       noTelp: "",
       statusHunian: "tetap",
-      tglBatasDomisili: null,
+      tglBatasDomisili: undefined,
+      isAdmin: false,
     },
   });
 
@@ -47,7 +49,8 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
           blokRumah: editData.blokRumah,
           noTelp: editData.noTelp,
           statusHunian: editData.statusHunian,
-          tglBatasDomisili: editData.tglBatasDomisili ?? null,
+          tglBatasDomisili: editData.tglBatasDomisili ?? undefined,
+          isAdmin: editData.isAdmin ?? false,
         });
       } else {
         form.reset({
@@ -55,7 +58,8 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
           blokRumah: "",
           noTelp: "",
           statusHunian: "tetap",
-          tglBatasDomisili: null,
+          tglBatasDomisili: undefined,
+          isAdmin: false,
         });
       }
     }
@@ -175,6 +179,31 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
                 )}
               />
             )}
+
+            <div className="rounded-lg border bg-muted/40 p-4">
+              <FormField
+                control={form.control}
+                name="isAdmin"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base font-semibold text-amber-600">Akses Pengurus RT</FormLabel>
+                      <FormMessage />
+                      <p className="text-sm text-muted-foreground">
+                        Berikan akses administrator penuh ke Papan Informasi dan Manajemen Kas.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-amber-600"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -90,6 +90,7 @@ export default function KategoriKasPage() {
           {loading ? (
             <div className="space-y-2 p-4">
               {Array.from({ length: 5 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton is static
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>

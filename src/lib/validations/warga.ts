@@ -5,7 +5,8 @@ export const wargaFormSchema = z.object({
   blokRumah: z.string().min(1, "Blok rumah wajib diisi"),
   noTelp: z.string().min(10, "Nomor telepon minimal 10 digit").max(15),
   statusHunian: z.enum(["tetap", "kontrak"]),
-  tglBatasDomisili: z.string().nullable().optional(),
+  tglBatasDomisili: z.string().optional().nullable(),
+  isAdmin: z.boolean(),
 });
 
 export type WargaFormValues = z.infer<typeof wargaFormSchema>;

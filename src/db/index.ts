@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import * as schema from "./schema";
 
+// biome-ignore lint/style/noNonNullAssertion: env loaded
 const connectionString = process.env.DATABASE_URL!;
 
 // Limit pool size to avoid "too many clients" in dev (Turbopack hot-reload creates

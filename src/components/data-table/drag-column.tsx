@@ -25,6 +25,7 @@ function DragHandle({ id }: { id: number }) {
   );
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: Drag column generic required by table structure
 export const dragColumn: ColumnDef<any> = {
   id: "drag",
   header: () => null,

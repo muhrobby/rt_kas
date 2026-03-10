@@ -19,12 +19,42 @@ export async function getWargaList(search?: string) {
   const conditions = search
     ? or(ilike(warga.namaKepalaKeluarga, `%${search}%`), ilike(warga.blokRumah, `%${search}%`))
     : undefined;
-  return db.select().from(warga).where(conditions).orderBy(warga.blokRumah);
+
+  return db
+    .select({
+      id: warga.id,
+      namaKepalaKeluarga: warga.namaKepalaKeluarga,
+      blokRumah: warga.blokRumah,
+      noTelp: warga.noTelp,
+      statusHunian: warga.statusHunian,
+      tglBatasDomisili: warga.tglBatasDomisili,
+      createdAt: warga.createdAt,
+      updatedAt: warga.updatedAt,
+      isAdmin: sql<boolean>`CASE WHEN ${user.role} = 'admin' THEN true ELSE false END`.as("is_admin"),
+    })
+    .from(warga)
+    .leftJoin(user, eq(user.wargaId, warga.id))
+    .where(conditions)
+    .orderBy(warga.blokRumah);
 }
 
 export async function getWargaById(id: number) {
   await requireAdmin();
-  const [result] = await db.select().from(warga).where(eq(warga.id, id));
+  const [result] = await db
+    .select({
+      id: warga.id,
+      namaKepalaKeluarga: warga.namaKepalaKeluarga,
+      blokRumah: warga.blokRumah,
+      noTelp: warga.noTelp,
+      statusHunian: warga.statusHunian,
+      tglBatasDomisili: warga.tglBatasDomisili,
+      createdAt: warga.createdAt,
+      updatedAt: warga.updatedAt,
+      isAdmin: sql<boolean>`CASE WHEN ${user.role} = 'admin' THEN true ELSE false END`.as("is_admin"),
+    })
+    .from(warga)
+    .leftJoin(user, eq(user.wargaId, warga.id))
+    .where(eq(warga.id, id));
   return result ?? null;
 }
 
@@ -60,7 +90,7 @@ export async function createWarga(data: WargaFormValues) {
       emailVerified: true,
       username: parsed.noTelp,
       displayUsername: parsed.noTelp,
-      role: "user",
+      role: parsed.isAdmin ? "admin" : "user",
       wargaId: newWarga.id,
     });
     await db.insert(account).values({
@@ -107,11 +137,18 @@ export async function updateWarga(id: number, data: WargaFormValues) {
         displayUsername: parsed.noTelp,
         email: `${parsed.noTelp}@kas-rt.local`,
         name: parsed.namaKepalaKeluarga,
+        role: parsed.isAdmin ? "admin" : "user",
       })
       .where(eq(user.wargaId, id));
-  } else if (existing.namaKepalaKeluarga !== parsed.namaKepalaKeluarga) {
-    // Sync name change to linked user
-    await db.update(user).set({ name: parsed.namaKepalaKeluarga }).where(eq(user.wargaId, id));
+  } else {
+    // Sync name and role change to linked user
+    await db
+      .update(user)
+      .set({
+        name: parsed.namaKepalaKeluarga,
+        role: parsed.isAdmin ? "admin" : "user",
+      })
+      .where(eq(user.wargaId, id));
   }
 
   const [updated] = await db

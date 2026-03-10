@@ -9,7 +9,7 @@ interface SessionUserProps {
 }
 
 export function SessionUser({ user }: SessionUserProps) {
-  const roleLabel = user.role === "admin" ? "Admin" : "Warga";
+  const roleLabel = user.role === "admin" ? "Pengurus RT" : "Warga Biasa";
 
   return (
     <div className="flex items-center gap-2">
