@@ -88,14 +88,14 @@ export function LaporanSummaryTable({ data, tahun }: LaporanSummaryTableProps) {
         </CardHeader>
         <CardContent className="p-0 sm:p-6 sm:pt-0">
           {/* DESKTOP VIEW */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="w-[150px] font-bold text-base text-foreground">Bulan</TableHead>
-                  <TableHead className="font-bold text-base text-foreground text-right">Pemasukan</TableHead>
-                  <TableHead className="font-bold text-base text-foreground text-right">Pengeluaran</TableHead>
-                  <TableHead className="font-bold text-base text-foreground text-right">Sisa</TableHead>
+                  <TableHead className="text-right font-bold text-base text-foreground">Pemasukan</TableHead>
+                  <TableHead className="text-right font-bold text-base text-foreground">Pengeluaran</TableHead>
+                  <TableHead className="text-right font-bold text-base text-foreground">Sisa</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -112,16 +112,16 @@ export function LaporanSummaryTable({ data, tahun }: LaporanSummaryTableProps) {
                       onClick={() => handleRowClick(row.bulan, namaBulan, row.keluar)}
                     >
                       <TableCell className="font-medium text-base">{namaBulan}</TableCell>
-                      <TableCell className="text-right text-base font-semibold text-green-600">
+                      <TableCell className="text-right font-semibold text-base text-green-600">
                         {row.masuk > 0 ? formatRupiah(row.masuk) : "-"}
                       </TableCell>
                       <TableCell
-                        className={`text-right text-base font-semibold ${hasExpenses ? "text-red-500 underline decoration-red-500/30 underline-offset-4" : "text-muted-foreground"}`}
+                        className={`text-right font-semibold text-base ${hasExpenses ? "text-red-500 underline decoration-red-500/30 underline-offset-4" : "text-muted-foreground"}`}
                       >
                         {hasExpenses ? formatRupiah(row.keluar) : "-"}
                       </TableCell>
                       <TableCell
-                        className={`text-right text-base font-bold ${
+                        className={`text-right font-bold text-base ${
                           isNegative ? "text-red-600" : sisa > 0 ? "text-emerald-700" : "text-muted-foreground"
                         }`}
                       >

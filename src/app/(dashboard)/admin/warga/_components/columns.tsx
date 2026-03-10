@@ -47,7 +47,7 @@ export function getColumns(onEdit: (row: WargaRow) => void, onDelete: (row: Warg
           variant={row.original.isAdmin ? "default" : "outline"}
           className={
             row.original.isAdmin
-              ? "bg-amber-500 hover:bg-amber-600 border-transparent text-white"
+              ? "border-transparent bg-amber-500 text-white hover:bg-amber-600"
               : "text-muted-foreground"
           }
         >

@@ -187,9 +187,9 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base font-semibold text-amber-600">Akses Pengurus RT</FormLabel>
+                      <FormLabel className="font-semibold text-amber-600 text-base">Akses Pengurus RT</FormLabel>
                       <FormMessage />
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Berikan akses administrator penuh ke Papan Informasi dan Manajemen Kas.
                       </p>
                     </div>
