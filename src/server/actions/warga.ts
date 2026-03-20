@@ -14,10 +14,17 @@ import { type WargaFormValues, wargaFormSchema } from "@/lib/validations/warga";
 
 import { logActivity } from "./audit";
 
+function escapeIlike(input: string): string {
+  return input.replace(/[%_\\]/g, "\\$&");
+}
+
 export async function getWargaList(search?: string) {
   await requireAdmin();
   const conditions = search
-    ? or(ilike(warga.namaKepalaKeluarga, `%${search}%`), ilike(warga.blokRumah, `%${search}%`))
+    ? (() => {
+        const safeSearch = escapeIlike(search);
+        return or(ilike(warga.namaKepalaKeluarga, `%${safeSearch}%`), ilike(warga.blokRumah, `%${safeSearch}%`));
+      })()
     : undefined;
 
   return db
@@ -176,6 +183,16 @@ export async function deleteWarga(id: number) {
   const session = await requireAdmin();
   const [existing] = await db.select().from(warga).where(eq(warga.id, id));
   if (!existing) throw new Error("Warga tidak ditemukan");
+
+  // Check related transactions
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(transaksi)
+    .where(eq(transaksi.wargaId, id));
+
+  if (result && result.count > 0) {
+    throw new Error(`Warga memiliki ${result.count} transaksi terkait, tidak bisa dihapus.`);
+  }
 
   // Delete linked user account (sessions cascade via FK)
   await db.delete(user).where(eq(user.wargaId, id));

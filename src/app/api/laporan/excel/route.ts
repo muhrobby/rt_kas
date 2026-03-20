@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { requireAdmin } from "@/lib/auth-helpers";
 import { generateExcelBuffer } from "@/lib/excel/export-helpers";
+import { laporanParamsSchema } from "@/lib/validations/laporan";
 import { getRekapKas } from "@/server/actions/laporan";
 
 const BULAN_NAMES = [
@@ -23,13 +24,21 @@ export async function GET(request: NextRequest) {
   await requireAdmin();
 
   const { searchParams } = new URL(request.url);
-  const bulanAwal = Number(searchParams.get("bulanAwal") ?? "1");
-  const bulanAkhir = Number(searchParams.get("bulanAkhir") ?? "12");
-  const tahun = Number(searchParams.get("tahun") ?? new Date().getFullYear());
+  const rawBulanAwal = searchParams.get("bulanAwal") ?? "1";
+  const rawBulanAkhir = searchParams.get("bulanAkhir") ?? "12";
+  const rawTahun = searchParams.get("tahun") ?? String(new Date().getFullYear());
 
-  if (!bulanAwal || !bulanAkhir || !tahun) {
-    return new Response("Parameter tidak lengkap", { status: 400 });
+  const parsed = laporanParamsSchema.safeParse({
+    bulanAwal: rawBulanAwal,
+    bulanAkhir: rawBulanAkhir,
+    tahun: rawTahun,
+  });
+
+  if (!parsed.success) {
+    return new Response("Parameter tidak valid", { status: 400 });
   }
+
+  const { bulanAwal, bulanAkhir, tahun } = parsed.data;
 
   const data = await getRekapKas(bulanAwal, bulanAkhir, tahun);
 
