@@ -3,27 +3,35 @@
 // Generated for: username plugin + admin plugin
 // Adapted manually due to CLI resolution issues with better-auth@1.5.3
 
-import { boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, check, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  // username plugin fields
-  username: text("username").unique(),
-  displayUsername: text("display_username"),
-  // admin plugin fields
-  role: text("role").default("user"),
-  banned: boolean("banned").default(false),
-  banReason: text("ban_reason"),
-  banExpires: timestamp("ban_expires"),
-  // custom field — links to warga profile
-  wargaId: integer("warga_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    // username plugin fields
+    username: text("username").unique(),
+    displayUsername: text("display_username"),
+    // admin plugin fields
+    role: text("role").default("user"),
+    banned: boolean("banned").default(false),
+    banReason: text("ban_reason"),
+    banExpires: timestamp("ban_expires"),
+    // custom field — links to warga profile
+    wargaId: integer("warga_id"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uq_user_warga_id_nonnull").on(table.wargaId).where(sql`${table.wargaId} is not null`),
+    check("user_ck_role", sql`${table.role} in ('admin', 'user')`),
+  ],
+);
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
