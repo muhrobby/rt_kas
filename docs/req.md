@@ -135,46 +135,55 @@
 
 # 5. Perancangan Database (Final untuk Coding)
 
-### Tabel 1: `tb_users` (Untuk login Admin dan Warga)
-- `id_user` (Primary Key, Auto Increment)
-- `no_telp` (Varchar - Bisa diisi No. Telp agar mudah diingat)
-- `password` (Varchar)
-- `role` (Enum: 'admin', 'user') - Terintegrasi dengan entitas dan plugin Better-Auth
-- `id_warga` (Foreign Key - Boleh NULL/Kosong jika user tersebut adalah Admin murni)
+### Tabel 1: `user` (Tabel bawaan Better-Auth)
+- `id` (Primary Key, String)
+- `name` (String)
+- `email` (String, Unique)
+- `emailVerified` (Boolean)
+- `image` (String)
+- `password` (berada di tabel `account` / `credential` terpisah)
+- `role` (Enum: 'admin', 'user') - Terintegrasi dengan plugin admin Better-Auth
+- `banned`, `banReason`, `banExpires` (Detail larangan akses)
+- `wargaId` (Foreign Key / Integer - Boleh NULL jika pengguna murni Super Admin)
+- `createdAt`, `updatedAt`
 
-### Tabel 2: `tb_warga` (Data profil warga, tanpa NIK/KK)
-- `id_warga` (Primary Key, Auto Increment)
-- `nama_kepala_keluarga` (Varchar)
-- `blok_rumah` (Varchar - Misal: Blok A1 No. 5)
-- `no_telp` (Varchar)
-- `status_hunian` (Enum: 'Tetap', 'Kontrak')
-- `tgl_batas_domisili` (Date - Boleh NULL jika warga tetap)
+### Tabel 2: `warga` (Data profil warga)
+- `id` (Primary Key, Auto Increment)
+- `nama_kepala_keluarga` (String)
+- `blok_rumah` (String - Misal: Blok A1 No. 5)
+- `no_telp` (String, Unique)
+- `status_hunian` (Enum: 'tetap', 'kontrak')
+- `tgl_batas_domisili` (Date - NULL jika warga tetap)
+- `createdAt`, `updatedAt`
 
-### Tabel 3: `tb_kategori_kas` (Master data iuran & pengeluaran)
-- `id_kategori` (Primary Key, Auto Increment)
-- `nama_kategori` (Varchar - Misal: Keamanan, Sampah, Operasional RT)
-- `jenis_arus` (Enum: 'Masuk', 'Keluar')
-- `nominal_default` (Int - Untuk fitur efisiensi/otomatisasi)
+### Tabel 3: `kategori_kas` (Master data iuran & pengeluaran)
+- `id` (Primary Key, Auto Increment)
+- `nama_kategori` (String - Misal: Keamanan, Sampah, Operasional RT)
+- `jenis_arus` (Enum: 'masuk', 'keluar')
+- `tipe_tagihan` (Enum: 'bulanan', 'sekali') - Tipe siklus pembayaran tagihan
+- `nominal_default` (Integer - Untuk fitur pengisian form otomatis)
+- `createdAt`
 
-### Tabel 4: `tb_transaksi` (Jantung utama aplikasi keuangan)
-- `id_transaksi` (Primary Key, Auto Increment)
-- `waktu_transaksi` (Datetime - Otomatis merekam tanggal & jam)
-- `id_user` (Foreign Key - Menyimpan ID Admin yang menginput, bagian dari Audit Trail)
-- `id_warga` (Foreign Key - Boleh NULL/Kosong jika transaksi pengeluaran)
-- `id_kategori` (Foreign Key)
-- `bulan_tagihan` (Varchar - Misal: Januari)
-- `tahun_tagihan` (Year/Int - Misal: 2026)
-- `nominal` (Int)
-- `tipe_arus` (Enum: 'Masuk', 'Keluar')
-- `keterangan` (Text - Misal: "Bayar dobel", atau "Beli Sapu")
+### Tabel 4: `transaksi` (Jantung utama aplikasi keuangan)
+- `id` (Primary Key, Auto Increment)
+- `waktu_transaksi` (Datetime - Otomatis merekam jam transaksi)
+- `user_id` (Foreign Key - ID Admin yang menginput, untuk Audit)
+- `warga_id` (Foreign Key - Boleh NULL untuk kategori transaksi keluar)
+- `kategori_id` (Foreign Key)
+- `bulan_tagihan` (String - Misal: Januari)
+- `tahun_tagihan` (Integer - Misal: 2026)
+- `nominal` (Integer)
+- `tipe_arus` (Enum: 'masuk', 'keluar')
+- `keterangan` (Text)
+- `createdAt`
 
-### Tabel 5: `tb_log_aktivitas` (Fitur Enterprise Audit Trail)
-- `id_log` (Primary Key, Auto Increment)
+### Tabel 5: `log_aktivitas` (Fitur Audit Trail)
+- `id` (Primary Key, Auto Increment)
 - `waktu_log` (Datetime)
-- `id_user` (Foreign Key - Siapa yang melakukan aktivitas)
-- `modul` (Varchar - Misal: Data Warga, Transaksi, Kategori)
-- `aksi` (Enum: 'Tambah', 'Edit', 'Hapus', 'Login')
-- `keterangan` (Text - Misal: "Menambahkan warga baru an. Bpk Ahmad")
+- `user_id` (Foreign Key - Pengguna/Admin yang melakukan aktivitas)
+- `modul` (String - Misal: Data Warga, Transaksi, Auth)
+- `aksi` (Enum: 'tambah', 'edit', 'hapus', 'login', 'logout')
+- `keterangan` (Text - Rincian tindakan)
 
 ---
 
@@ -195,23 +204,23 @@ Sampaikan ke Aan bahwa ada 5 Kotak Entitas yang harus digambar dan dihubungkan. 
 Di diagram ini, Aan akan menggambar 5 kotak Class. Di setiap kotak, ada 2 bagian: Atribut (berisi nama kolom database) dan Method/Operation (berisi fungsi coding yang kamu buat).
 
 ### Class User
-**Atribut:** `+ id_user`, `+ username`, `+ password`, `+ role`, `+ id_warga`  
+**Atribut:** `+ id`, `+ name`, `+ email`, `+ role`, `+ wargaId`, `+ banned`, `+ createdAt`, `+ updatedAt`  
 **Method:** `+ login()`, `+ logout()`, `+ cekAkses()`
 
 ### Class Warga
-**Atribut:** `+ id_warga`, `+ nama_kepala_keluarga`, `+ blok_rumah`, `+ no_telp`, `+ status_hunian`, `+ tgl_batas_domisili`  
+**Atribut:** `+ id`, `+ namaKepalaKeluarga`, `+ blokRumah`, `+ noTelp`, `+ statusHunian`, `+ tglBatasDomisili`, `+ createdAt`, `+ updatedAt`  
 **Method:** `+ tambahWarga()`, `+ editWarga()`, `+ hapusWarga()`, `+ cekStatusDomisili()`
 
 ### Class KategoriKas
-**Atribut:** `+ id_kategori`, `+ nama_kategori`, `+ jenis_arus`, `+ nominal_default`  
+**Atribut:** `+ id`, `+ namaKategori`, `+ jenisArus`, `+ tipeTagihan`, `+ nominalDefault`, `+ createdAt`  
 **Method:** `+ tambahKategori()`, `+ editKategori()`, `+ hapusKategori()`, `+ getNominalOtomatis()`
 
 ### Class Transaksi
-**Atribut:** `+ id_transaksi`, `+ waktu_transaksi`, `+ id_user`, `+ id_warga`, `+ id_kategori`, `+ bulan_tagihan`, `+ tahun_tagihan`, `+ nominal`, `+ tipe_arus`, `+ keterangan`  
+**Atribut:** `+ id`, `+ waktuTransaksi`, `+ userId`, `+ wargaId`, `+ kategoriId`, `+ bulanTagihan`, `+ tahunTagihan`, `+ nominal`, `+ tipeArus`, `+ keterangan`, `+ createdAt`  
 **Method:** `+ simpanPemasukan()`, `+ simpanPengeluaran()`, `+ cetakE_Kuitansi()`, `+ getLaporanBulanan()`
 
-### Class LogAktivitas (Class Baru)
-**Atribut:** `+ id_log`, `+ waktu_log`, `+ id_user`, `+ modul`, `+ aksi`, `+ keterangan`  
+### Class LogAktivitas
+**Atribut:** `+ id`, `+ waktuLog`, `+ userId`, `+ modul`, `+ aksi`, `+ keterangan`  
 **Method:** `+ catatLog()`, `+ exportLogToExcel()`, `+ tampilkanRiwayatAdmin()`
 
 ---
