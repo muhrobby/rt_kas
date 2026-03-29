@@ -228,71 +228,51 @@ Di diagram ini, Aan akan menggambar 5 kotak Class. Di setiap kotak, ada 2 bagian
 # 8. Rancangan UI Dummy (Improvement)
 
 ### a. UI Login & Layout Dasar
-- **Form Login:** Input No. Telepon/Username, Input Password, Tombol "Masuk".
+- **Form Login:** Input Username, Input Password, dan Tombol "Login". Terdapat pesan *error* dinamis (Toast/Sonner).
 - **Layout Utama (Setelah Login):** 
-  - **Sidebar Kiri (Menu):** Dashboard, Data Warga, Kategori Kas, Kas Masuk, Kas Keluar, Laporan, Log Aktivitas.
-  - **Header Atas:** Nama User yang Login (misal: "Halo, Budi (Admin)"), Tombol Logout.
+  - **Sidebar Kiri (Collapsible):** Dilengkapi logo RT Kas di kiri atas. Daftar menu dikelompokkan menjadi Main (Dashboard, Data Warga, Kategori Kas, Pembayaran, Pengeluaran) dan Pelaporan (Laporan Keuangan, Log Aktivitas).
+  - **Bottom Sidebar / Header:** Terdapat *Account Switcher* (Dropdown Menu) untuk melihat Role ("Pengurus RT" atau "Warga"), Tombol Theme Toggle (Terang/Gelap), dan Logout.
 
 ### b. UI Dashboard Admin
-- **Card Statistik (Atas):** Total Warga Aktif, Saldo Kas Saat Ini, Total Pemasukan Bulan Ini, Total Pengeluaran Bulan Ini. (Tampilan memiliki *Skeleton Loading* animatif).
-- **Tabel Pemasukan Terakhir (Bawah):** Menampilkan ringkasan tagihan yang baru dibayarkan oleh warga.
+- **Header:** Judul Halaman dan Breadcrumbs (Navigasi path folder).
+- **Card Statistik (Atas):** 4 Kartu metrik: Total Warga (Icon User), Saldo Kas (Icon Dompet), Pemasukan Bulan Ini (Panah Hijau Ke Atas), dan Pengeluaran Bulan Ini (Panah Merah Ke Bawah). Dilengkapi dengan animasi *Skeleton Loading* sebelum data selesai dipanggil asinkron.
+- **Tabel Transaksi Terbaru (Bawah):** Menampilkan histori kas masuk riil terbaru (Kolom: Waktu, Keterangan, Nominal, User Pencatat).
 
 ### c. UI Menu Data Warga
-- **Tombol Aksi:** "Tambah Warga Baru" (di kanan atas).
-- **Tabel Data:** Menampilkan Kolom Akses/Peran. Jika berstatus admin akan ditandai dengan Badge khusus "Pengurus RT". Apabila data tidak ada, tabel merender UI "Empty States".
-- **Improvement UX:** 
-  - Pada Form Warga tersedia switch toggle khusus "Akses Pengurus RT" yang akan menyinkronkan tabel warga dan tabel User (Database Autentikasi) secara sekaligus.
-  - Kolom No. Telp disisipkan link Icon WhatsApp.
+- **Tombol Aksi:** Tombol "Tambah Warga Baru" menggunakan pop-up modal/Dialog.
+- **Tabel Data:** Menampilkan atribut (No, Nama Kepala Keluarga, Blok Rumah, No. Telp, Status Hunian, Akses/Peran, dan Aksi/Edit/Hapus). Tombol edit memunculkan pop-up yang sama.
+- **Improvement Visual:** 
+  - Kolom **Peran** ditandai *Badge* warna khusus (Amber untuk Pengurus RT, Outline untuk Warga Biasa).
+  - *Switch Toggle* "Jadikan Pengurus RT" ada di bawah form.
+  - Tabel menampilkan illustrasi *Empty State* (Gambar kosong + tulisan abu-abu) jika belum ada data.
 
-### d. UI Menu Kategori Kas (Menu Baru)
-- **Tabel Data:** Nama Kategori, Jenis Arus (Masuk/Keluar), Nominal Default, Aksi.
-- **Form Tambah/Edit:** Input Nama, Pilih Jenis, Input Angka Nominal Default (Contoh: 25000).
+### d. UI Menu Kategori Kas
+- **Tabel Data:** Kolom Nama Kategori, Tipe Arus (Badge Hijau untuk Masuk, Merah untuk Keluar), Tipe Tagihan (Badge Biru untuk Bulanan, Ungu untuk Sekali Bayar), Nominal Standar, Akses Edit/Hapus.
+- **Form Kategori:** Input Nama, Radio/Select Tipe Arus, Select Tipe Tagihan, dan Input Nominal Default.
 
-### e. UI Menu Kas Masuk (Pembayaran Warga)
-- **Area Form Input:** 
-  - Dropdown Pilih Nama Warga.
-  - Dropdown Pilih Kategori Iuran (Keamanan/Sampah/dll). -> Saat dipilih, kolom nominal di bawahnya otomatis terisi.
-  - Input Nominal (Bisa diedit/Otomatis).
-  - Checkbox / Select Bulan (Bisa pilih lebih dari 1 jika nunggak).
-  - Dropdown Tahun Tagihan (2025, 2026, dst).
-  - Input Keterangan (Opsional).
-  - Tombol "Simpan Pembayaran".
-- **Area Tabel (Kanan/Bawah):** Menampilkan histori kas masuk hari ini.
+### e. UI Menu Kas Masuk (Pembayaran)
+- **Form Transaksi Input (Sisi Kiri/Modal):** 
+  - Dropdown/Select 'Warga'.
+  - Dropdown 'Kategori Tagihan' (terikat nilai otomatis berdasarkan *nominal default*).
+  - Pemilihan Bulan (bisa mencontreng banyak bulan jika tipenya *Bulanan*).
+  - Dropdown Tahun Pembayaran.
+  - Input Nominal terbayar dan Keterangan opsional.
+- **Riwayat Harian (Sisi Kanan):** Daftar data siapa saja yang sudah bayar di hari tersebut.
 
-### f. UI Menu Kas Keluar (Pengeluaran RT)
-- **Area Form Input:** 
-  - Dropdown Kategori (Misal: Operasional, Sosial, dll).
-  - Input Tanggal Pengeluaran.
-  - Input Nominal.
-  - Input Keterangan Detail (Misal: "Beli 2 buah sapu lidi dan pengki").
-  - Tombol "Simpan Pengeluaran".
+### f. UI Menu Kas Keluar (Pengeluaran)
+- **Form Pengeluaran:** Dropdown 'Kategori Pengeluaran', Date-picker 'Tanggal Keluar', Input Nominal (Rp), dan Input Teks Keterangan peruntukan uang.
 
-### g. UI Menu Laporan Keuangan (Untuk di-Share ke Warga / Board Informasi)
-- **Area Filter:** Terdapat pilihan input Tahun transaksi.
-- **Tabel Laporan / Rekapitulasi:** Menampilkan agregat kumulatif kas RT per bulan (Total Uang Masuk, Keluar, dan Saldo). Baris tabel dapat di-klik untuk membuka *Dialog Pop-Up* berisi rincian arus pengeluaran mendetail (transparansi maksimal).
-- **Improvement UX:** 
-  - Mobile Responsiveness (*Adaptive Layout*): Membentuk UI tabel (*Desktop*) dan bertransformasi otomatis menjadi komponen "Card-View" ketika diakses dari perangkat HP. Hal ini akan mencegah horizontal scroll yang merepotkan warga & pengurus.
-  - Diterapkan juga konsep estetika skeleton preload.
+### g. UI Menu Laporan Keuangan
+- **Area Filter:** Filter Pilihan 'Tahun' berjalan dengan sebuah tombol submit.
+- **Dashboard Agregasi:** 
+  - Desktop View: Tabel rekap utuh (Bulan, Total Pemasukan, Total Pengeluaran, dan Sisa Saldo Kumulatif).
+  - Interaktif: Meng-klik baris tertentu membuka pop-up Modal yang berisi **Rincian Detil Pengeluaran** per tanggal bulan tersebut.
+  - *Mobile Responsiveness*: Bila dibuka dari ponsel layar kecil, tabel hancur lebur akan diganti menjadi kumpulan desain *Card-View* bersusun (Card per bulan) yang menawan dan bebas gulir vertikal.
 
-### h. UI Dashboard Warga (Tampilan Mobile-Friendly) 
-*Desain ini dibuat memanjang ke bawah seperti layar HP, karena warga pasti membukanya lewat HP.*
-- **Header:** "Halo, Keluarga [Nama Warga]".
-- **Card Atas:** "Saldo Kas Lingkungan RT: Rp X.XXX.XXX" (Transparansi).
-- **Card Status Pembayaran (Tengah):** Tampilan besar menunjukkan "Tagihan Bulan Ini: LUNAS" (Warna Hijau) atau "NUNGGAK" (Warna Merah).
-- **Tombol Aksi (Bawah):** "Lihat Riwayat & E-Kuitansi". Jika diklik, muncul daftar bulan apa saja yang sudah dibayar beserta tanggal pembayarannya.
+### h. UI Dashboard Warga
+- **Card Saldo Kepercayaan:** Menyajikan Saldo Kas Lingkungan RT total terbaru agar warga percaya terhadap pengurus.
+- **Kuitansi/Status Tagihan Warga:** Tampilan yang menunjukkan riwayat pelunasan tunggakan spesifik untuk rumah warga yang bersangkutan dengan keterangan warna *Lunas* atau *Tertunggak*.
 
-### i. UI Menu Log Aktivitas / Audit Trail (Khusus Admin/Ketua RT)
-**i.1. Area Pencarian & Filter (Bagian Atas)**
-- **Filter Tanggal:** Input Tanggal Mulai s/d Tanggal Akhir.
-- **Filter Petugas:** Dropdown pilih nama Admin (Misal: Semua Petugas, Bapak Budi, Bapak Andi).
-- **Filter Modul/Kategori:** Dropdown (Semua Aktivitas, Transaksi Masuk, Transaksi Keluar, Data Warga).
-- **Tombol Aksi:** Tombol "Cari/Filter" dan Tombol "Eksport Log (Excel/PDF)".
-
-**i.2. Area Tabel Log Aktivitas (Bagian Bawah)** 
-*Tabel ini harus menampilkan data secara kronologis (waktu terbaru di urutan paling atas).*
-- **No**
-- **Waktu (Tanggal & Jam):** (Misal: 12-04-2026 14:30:05) -> Jam/detik sangat penting di Audit Trail!
-- **Petugas:** Nama Admin yang sedang login saat itu.
-- **Modul:** (Misal: Kas Masuk / Kas Keluar / Data Warga / Login).
-- **Aksi:** (Tambah / Edit / Hapus).
-- **Deskripsi Detail:** Kalimat penjelas dari sistem. (Misal: "Mencatat iuran keamanan Rp 25.000 untuk Bpk. Ahmad (Blok A2)" atau "Mengubah data nomor telepon warga an. Ibu Siti").
+### i. UI Log Aktivitas (Audit Trail)
+- **Susunan Data:** Tabel dengan *Pagination* urutan terbalik waktu (Terbaru > Terlama).
+- **Kolom Data:** Menampilkan secara akurat kolom (Waktu/Detik, Modul Sistem, Tindakan/`Badge Aksi`, Deskripsi Detil Aktivitas, dan Pelaku/Admin `User Name`). Merupakan alat lacak keamanan tertinggi di dalam aplikasi.
