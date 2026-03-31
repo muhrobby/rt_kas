@@ -69,7 +69,7 @@ export async function createWarga(data: WargaFormValues) {
   const session = await requireAdmin();
   const parsed = wargaFormSchema.parse(data);
 
-  return await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     // Check if username (noTelp) is already taken
     const [existingUser] = await tx.select({ id: user.id }).from(user).where(eq(user.username, parsed.noTelp));
     if (existingUser) {
@@ -113,16 +113,18 @@ export async function createWarga(data: WargaFormValues) {
       throw new Error(`Gagal membuat akun login: ${err instanceof Error ? err.message : String(err)}`);
     }
 
-    await logActivity({
-      userId: session.user.id,
-      modul: "Data Warga",
-      aksi: "tambah",
-      keterangan: `Menambahkan warga baru an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
-    });
-    revalidatePath("/admin/warga");
-
     return { ...newWarga, defaultPassword: parsed.noTelp };
   });
+
+  await logActivity({
+    userId: session.user.id,
+    modul: "Data Warga",
+    aksi: "tambah",
+    keterangan: `Menambahkan warga baru an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
+  });
+  revalidatePath("/admin/warga");
+
+  return result;
 }
 
 export async function updateWarga(id: number, data: WargaFormValues) {
@@ -132,7 +134,7 @@ export async function updateWarga(id: number, data: WargaFormValues) {
   const [existing] = await db.select().from(warga).where(eq(warga.id, id));
   if (!existing) throw new Error("Warga tidak ditemukan");
 
-  return await db.transaction(async (tx) => {
+  const updated = await db.transaction(async (tx) => {
     // If noTelp changed, update username on the linked user account
     if (existing.noTelp !== parsed.noTelp) {
       // Ensure new noTelp is not already taken by another user
@@ -161,7 +163,7 @@ export async function updateWarga(id: number, data: WargaFormValues) {
         .where(eq(user.wargaId, id));
     }
 
-    const [updated] = await tx
+    const [updatedResult] = await tx
       .update(warga)
       .set({
         namaKepalaKeluarga: parsed.namaKepalaKeluarga,
@@ -172,15 +174,19 @@ export async function updateWarga(id: number, data: WargaFormValues) {
       })
       .where(eq(warga.id, id))
       .returning();
-    await logActivity({
-      userId: session.user.id,
-      modul: "Data Warga",
-      aksi: "edit",
-      keterangan: `Mengubah data warga an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
-    });
-    revalidatePath("/admin/warga");
-    return updated;
+
+    return updatedResult;
   });
+
+  await logActivity({
+    userId: session.user.id,
+    modul: "Data Warga",
+    aksi: "edit",
+    keterangan: `Mengubah data warga an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
+  });
+  revalidatePath("/admin/warga");
+
+  return updated;
 }
 
 export async function deleteWarga(id: number) {
