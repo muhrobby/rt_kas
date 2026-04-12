@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, date, pgEnum, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { check, date, integer, pgEnum, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const statusHunianEnum = pgEnum("status_hunian", ["tetap", "kontrak"]);
 
@@ -11,6 +11,7 @@ export const warga = pgTable(
     blokRumah: text("blok_rumah").notNull(),
     noTelp: text("no_telp").notNull().unique(),
     statusHunian: statusHunianEnum("status_hunian").notNull().default("tetap"),
+    jumlahAnggota: integer("jumlah_anggota").notNull().default(1),
     tglBatasDomisili: date("tgl_batas_domisili"),
     tglPindah: date("tgl_pindah"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

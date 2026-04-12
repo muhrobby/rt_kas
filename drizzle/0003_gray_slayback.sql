@@ -1,0 +1,1 @@
+ALTER TABLE "warga" ADD COLUMN "jumlah_anggota" integer DEFAULT 1 NOT NULL;
