@@ -12,6 +12,7 @@ export const warga = pgTable(
     noTelp: text("no_telp").notNull().unique(),
     statusHunian: statusHunianEnum("status_hunian").notNull().default("tetap"),
     tglBatasDomisili: date("tgl_batas_domisili"),
+    tglPindah: date("tgl_pindah"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()

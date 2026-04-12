@@ -6,6 +6,7 @@ export const wargaFormSchema = z.object({
   noTelp: z.string().min(10, "Nomor telepon minimal 10 digit").max(15),
   statusHunian: z.enum(["tetap", "kontrak"]),
   tglBatasDomisili: z.string().optional().nullable(),
+  tglPindah: z.string().optional().nullable(),
   isAdmin: z.boolean(),
 });
 
