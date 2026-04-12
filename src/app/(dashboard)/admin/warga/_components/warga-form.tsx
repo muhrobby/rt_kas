@@ -27,13 +27,14 @@ interface WargaFormProps {
 export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaFormProps) {
   const isEdit = !!editData;
 
-  const form = useForm<WargaFormValues>({
-    resolver: zodResolver(wargaFormSchema),
+  const form = useForm<WargaFormValues, unknown, WargaFormValues>({
+    resolver: zodResolver(wargaFormSchema) as never,
     defaultValues: {
       namaKepalaKeluarga: "",
       blokRumah: "",
       noTelp: "",
       statusHunian: "tetap",
+      jumlahAnggota: 1,
       tglBatasDomisili: undefined,
       tglPindah: undefined,
       isAdmin: false,
@@ -50,6 +51,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
           blokRumah: editData.blokRumah,
           noTelp: editData.noTelp,
           statusHunian: editData.statusHunian,
+          jumlahAnggota: editData.jumlahAnggota ?? 1,
           tglBatasDomisili: editData.tglBatasDomisili ?? undefined,
           tglPindah: editData.tglPindah ?? undefined,
           isAdmin: editData.isAdmin ?? false,
@@ -60,6 +62,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
           blokRumah: "",
           noTelp: "",
           statusHunian: "tetap",
+          jumlahAnggota: 1,
           tglBatasDomisili: undefined,
           tglPindah: undefined,
           isAdmin: false,
@@ -133,6 +136,20 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
                     <FormLabel>No. Telepon / WhatsApp</FormLabel>
                     <FormControl>
                       <Input placeholder="081234567890" type="tel" inputMode="numeric" autoComplete="tel" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="jumlahAnggota"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jumlah Anggota Keluarga</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} placeholder="1" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

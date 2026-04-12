@@ -34,6 +34,7 @@ export async function getWargaList(search?: string) {
       blokRumah: warga.blokRumah,
       noTelp: warga.noTelp,
       statusHunian: warga.statusHunian,
+      jumlahAnggota: warga.jumlahAnggota,
       tglBatasDomisili: warga.tglBatasDomisili,
       tglPindah: warga.tglPindah,
       createdAt: warga.createdAt,
@@ -55,6 +56,7 @@ export async function getWargaById(id: number) {
       blokRumah: warga.blokRumah,
       noTelp: warga.noTelp,
       statusHunian: warga.statusHunian,
+      jumlahAnggota: warga.jumlahAnggota,
       tglBatasDomisili: warga.tglBatasDomisili,
       tglPindah: warga.tglPindah,
       createdAt: warga.createdAt,
@@ -85,6 +87,7 @@ export async function createWarga(data: WargaFormValues) {
         blokRumah: parsed.blokRumah,
         noTelp: parsed.noTelp,
         statusHunian: parsed.statusHunian,
+        jumlahAnggota: parsed.jumlahAnggota,
         tglBatasDomisili: parsed.tglBatasDomisili ?? null,
         tglPindah: parsed.tglPindah ?? null,
       })
@@ -173,6 +176,7 @@ export async function updateWarga(id: number, data: WargaFormValues) {
         blokRumah: parsed.blokRumah,
         noTelp: parsed.noTelp,
         statusHunian: parsed.statusHunian,
+        jumlahAnggota: parsed.jumlahAnggota,
         tglBatasDomisili: parsed.tglBatasDomisili ?? null,
         tglPindah: parsed.tglPindah ?? null,
       })

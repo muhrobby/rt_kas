@@ -13,6 +13,7 @@ export interface WargaRow {
   blokRumah: string;
   noTelp: string;
   statusHunian: "tetap" | "kontrak";
+  jumlahAnggota: number;
   tglBatasDomisili: string | null;
   tglPindah: string | null;
   createdAt: Date;
@@ -83,6 +84,11 @@ export function getColumns(onEdit: (row: WargaRow) => void, onDelete: (row: Warg
           {row.original.statusHunian === "tetap" ? "Tetap" : "Kontrak"}
         </Badge>
       ),
+    },
+    {
+      accessorKey: "jumlahAnggota",
+      header: "Jml. Anggota",
+      cell: ({ row }) => <span>{row.original.jumlahAnggota} Orang</span>,
     },
     {
       accessorKey: "tglPindah",
