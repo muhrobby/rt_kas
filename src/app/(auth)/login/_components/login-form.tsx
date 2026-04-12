@@ -5,11 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ export function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -38,6 +40,20 @@ export function LoginForm() {
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
+    setErrorMsg(null);
+
+    const translateError = (message?: string) => {
+      if (!message) return "Login gagal. Periksa nomor HP dan password Anda.";
+      const lowerMessage = message.toLowerCase();
+      if (lowerMessage.includes("invalid username or password")) {
+        return "Nomor HP atau password salah.";
+      }
+      if (lowerMessage.includes("user not found")) {
+        return "Pengguna tidak ditemukan.";
+      }
+      return message;
+    };
+
     const { error } = await signIn.username({
       username: data.username,
       password: data.password,
@@ -48,12 +64,17 @@ export function LoginForm() {
           router.refresh();
         },
         onError: (ctx) => {
-          toast.error(ctx.error.message || "Login gagal. Periksa nomor HP dan password.");
+          const msg = translateError(ctx.error.message);
+          setErrorMsg(msg);
+          toast.error(msg);
         },
       },
     });
+
     if (error) {
-      toast.error(error.message || "Login gagal. Periksa nomor HP dan password.");
+      const msg = translateError(error.message);
+      setErrorMsg(msg);
+      toast.error(msg);
     }
     setIsLoading(false);
   };
@@ -61,6 +82,13 @@ export function LoginForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {errorMsg && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Gagal Masuk</AlertTitle>
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
+        )}
         <FormField
           control={form.control}
           name="username"
@@ -94,6 +122,7 @@ export function LoginForm() {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     autoComplete="current-password"
+                    className="pr-10"
                     {...field}
                   />
                   <Button
