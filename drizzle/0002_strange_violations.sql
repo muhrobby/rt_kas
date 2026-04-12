@@ -1,0 +1,1 @@
+ALTER TABLE "warga" ADD COLUMN "tgl_pindah" date;

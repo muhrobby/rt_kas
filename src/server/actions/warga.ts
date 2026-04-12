@@ -35,6 +35,7 @@ export async function getWargaList(search?: string) {
       noTelp: warga.noTelp,
       statusHunian: warga.statusHunian,
       tglBatasDomisili: warga.tglBatasDomisili,
+      tglPindah: warga.tglPindah,
       createdAt: warga.createdAt,
       updatedAt: warga.updatedAt,
       isAdmin: sql<boolean>`CASE WHEN ${user.role} = 'admin' THEN true ELSE false END`.as("is_admin"),
@@ -55,6 +56,7 @@ export async function getWargaById(id: number) {
       noTelp: warga.noTelp,
       statusHunian: warga.statusHunian,
       tglBatasDomisili: warga.tglBatasDomisili,
+      tglPindah: warga.tglPindah,
       createdAt: warga.createdAt,
       updatedAt: warga.updatedAt,
       isAdmin: sql<boolean>`CASE WHEN ${user.role} = 'admin' THEN true ELSE false END`.as("is_admin"),
@@ -84,6 +86,7 @@ export async function createWarga(data: WargaFormValues) {
         noTelp: parsed.noTelp,
         statusHunian: parsed.statusHunian,
         tglBatasDomisili: parsed.tglBatasDomisili ?? null,
+        tglPindah: parsed.tglPindah ?? null,
       })
       .returning();
 
@@ -171,6 +174,7 @@ export async function updateWarga(id: number, data: WargaFormValues) {
         noTelp: parsed.noTelp,
         statusHunian: parsed.statusHunian,
         tglBatasDomisili: parsed.tglBatasDomisili ?? null,
+        tglPindah: parsed.tglPindah ?? null,
       })
       .where(eq(warga.id, id))
       .returning();

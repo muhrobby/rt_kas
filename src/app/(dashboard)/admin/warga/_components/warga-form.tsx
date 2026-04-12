@@ -35,6 +35,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
       noTelp: "",
       statusHunian: "tetap",
       tglBatasDomisili: undefined,
+      tglPindah: undefined,
       isAdmin: false,
     },
   });
@@ -50,6 +51,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
           noTelp: editData.noTelp,
           statusHunian: editData.statusHunian,
           tglBatasDomisili: editData.tglBatasDomisili ?? undefined,
+          tglPindah: editData.tglPindah ?? undefined,
           isAdmin: editData.isAdmin ?? false,
         });
       } else {
@@ -59,6 +61,7 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
           noTelp: "",
           statusHunian: "tetap",
           tglBatasDomisili: undefined,
+          tglPindah: undefined,
           isAdmin: false,
         });
       }
@@ -179,6 +182,25 @@ export function WargaForm({ open, onOpenChange, editData, onSuccess }: WargaForm
                 )}
               />
             )}
+
+            <FormField
+              control={form.control}
+              name="tglPindah"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tanggal Pindah (Opsional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="rounded-lg border bg-muted/40 p-4">
               <FormField

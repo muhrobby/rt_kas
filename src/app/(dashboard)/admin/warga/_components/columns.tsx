@@ -14,6 +14,7 @@ export interface WargaRow {
   noTelp: string;
   statusHunian: "tetap" | "kontrak";
   tglBatasDomisili: string | null;
+  tglPindah: string | null;
   createdAt: Date;
   isAdmin: boolean;
 }
@@ -82,6 +83,21 @@ export function getColumns(onEdit: (row: WargaRow) => void, onDelete: (row: Warg
           {row.original.statusHunian === "tetap" ? "Tetap" : "Kontrak"}
         </Badge>
       ),
+    },
+    {
+      accessorKey: "tglPindah",
+      header: "Status Tinggal",
+      cell: ({ row }) => {
+        if (!row.original.tglPindah) {
+          return <Badge variant="outline">Aktif</Badge>;
+        }
+        return (
+          <div className="flex flex-col gap-1">
+            <Badge variant="secondary">Pindah</Badge>
+            <span className="text-muted-foreground text-xs">{formatTanggal(row.original.tglPindah)}</span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "tglBatasDomisili",
