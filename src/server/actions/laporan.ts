@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq, gte, lt, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, lt, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
@@ -38,7 +38,7 @@ export async function getRekapKas(bulanAwal: number, bulanAkhir: number, tahun: 
     .from(transaksi)
     .leftJoin(kategoriKas, eq(transaksi.kategoriId, kategoriKas.id))
     .leftJoin(warga, eq(transaksi.wargaId, warga.id))
-    .where(and(gte(transaksi.waktuTransaksi, startDate), lte(transaksi.waktuTransaksi, endDate)))
+    .where(and(gte(transaksi.waktuTransaksi, startDate), lt(transaksi.waktuTransaksi, endDate)))
     .orderBy(asc(transaksi.waktuTransaksi));
 }
 
@@ -54,7 +54,7 @@ export async function getRekapSummary(bulanAwal: number, bulanAkhir: number, tah
       and(
         eq(transaksi.tipeArus, "masuk"),
         gte(transaksi.waktuTransaksi, startDate),
-        lte(transaksi.waktuTransaksi, endDate),
+        lt(transaksi.waktuTransaksi, endDate),
       ),
     );
 
@@ -65,7 +65,7 @@ export async function getRekapSummary(bulanAwal: number, bulanAkhir: number, tah
       and(
         eq(transaksi.tipeArus, "keluar"),
         gte(transaksi.waktuTransaksi, startDate),
-        lte(transaksi.waktuTransaksi, endDate),
+        lt(transaksi.waktuTransaksi, endDate),
       ),
     );
 
@@ -118,7 +118,7 @@ export async function getMonthlyChartData(tahun: number) {
       total: sql<number>`sum(${transaksi.nominal})::int`,
     })
     .from(transaksi)
-    .where(and(gte(transaksi.waktuTransaksi, startDate), lte(transaksi.waktuTransaksi, endDate)))
+    .where(and(gte(transaksi.waktuTransaksi, startDate), lt(transaksi.waktuTransaksi, endDate)))
     .groupBy(sql`extract(month from ${transaksi.waktuTransaksi})`, transaksi.tipeArus);
 
   // Build 12-month array

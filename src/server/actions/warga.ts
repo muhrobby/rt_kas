@@ -122,12 +122,16 @@ export async function createWarga(data: WargaFormValues) {
     return { ...newWarga, defaultPassword: parsed.noTelp };
   });
 
-  await logActivity({
-    userId: session.user.id,
-    modul: "Data Warga",
-    aksi: "tambah",
-    keterangan: `Menambahkan warga baru an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
-  });
+  try {
+    await logActivity({
+      userId: session.user.id,
+      modul: "Data Warga",
+      aksi: "tambah",
+      keterangan: `Menambahkan warga baru an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
+    });
+  } catch {
+    // Do not fail primary transaction when audit logging fails
+  }
   revalidatePath("/admin/warga");
 
   return result;
@@ -186,12 +190,16 @@ export async function updateWarga(id: number, data: WargaFormValues) {
     return updatedResult;
   });
 
-  await logActivity({
-    userId: session.user.id,
-    modul: "Data Warga",
-    aksi: "edit",
-    keterangan: `Mengubah data warga an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
-  });
+  try {
+    await logActivity({
+      userId: session.user.id,
+      modul: "Data Warga",
+      aksi: "edit",
+      keterangan: `Mengubah data warga an. ${parsed.namaKepalaKeluarga} (${parsed.blokRumah})`,
+    });
+  } catch {
+    // Do not fail primary transaction when audit logging fails
+  }
   revalidatePath("/admin/warga");
 
   return updated;
@@ -213,7 +221,12 @@ export async function deleteWarga(id: number) {
   }
 
   await db.transaction(async (tx) => {
-    // Delete linked user account (sessions cascade via FK)
+    const linkedUsers = await tx.select({ id: user.id }).from(user).where(eq(user.wargaId, id));
+
+    for (const linkedUser of linkedUsers) {
+      await tx.delete(account).where(eq(account.userId, linkedUser.id));
+    }
+
     await tx.delete(user).where(eq(user.wargaId, id));
     await tx.delete(warga).where(eq(warga.id, id));
   });

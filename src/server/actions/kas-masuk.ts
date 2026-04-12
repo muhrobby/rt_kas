@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
@@ -12,96 +12,145 @@ import { type KasMasukFormValues, kasMasukFormSchema } from "@/lib/validations/k
 
 import { logActivity } from "./audit";
 
+function isUniqueViolation(error: unknown): error is { code: string } {
+  return (
+    typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "23505"
+  );
+}
+
 export async function createPembayaran(data: KasMasukFormValues) {
   const session = await requireAdmin();
   const parsed = kasMasukFormSchema.parse(data);
 
-  const [wargaData] = await db.select().from(warga).where(eq(warga.id, parsed.wargaId));
-  const [kategoriData] = await db.select().from(kategoriKas).where(eq(kategoriKas.id, parsed.kategoriId));
+  interface CreatePembayaranResult {
+    inserted: (typeof transaksi.$inferSelect)[];
+    wargaData: typeof warga.$inferSelect;
+    kategoriData: typeof kategoriKas.$inferSelect;
+    activityText: string;
+  }
 
-  if (!wargaData || !kategoriData) throw new Error("Data tidak valid");
+  let result: CreatePembayaranResult;
 
-  const isSekali = parsed.bulanTagihan.length === 0;
+  try {
+    result = await db.transaction(async (tx) => {
+      const [wargaData] = await tx.select().from(warga).where(eq(warga.id, parsed.wargaId));
+      const [kategoriData] = await tx.select().from(kategoriKas).where(eq(kategoriKas.id, parsed.kategoriId));
 
-  if (isSekali) {
-    // One-time payment: insert a single transaction with null bulanTagihan and null tahunTagihan
-    const [inserted] = await db
-      .insert(transaksi)
-      .values({
-        userId: session.user.id,
-        wargaId: parsed.wargaId,
-        kategoriId: parsed.kategoriId,
-        bulanTagihan: null,
-        tahunTagihan: null,
-        nominal: parsed.nominal,
-        tipeArus: "masuk" as const,
-        keterangan: parsed.keterangan ?? `${kategoriData.namaKategori} — ${wargaData.namaKepalaKeluarga}`,
-      })
-      .returning();
+      if (!wargaData || !kategoriData) throw new Error("Data tidak valid");
 
-    if (!inserted) throw new Error("Gagal menyimpan transaksi");
+      const isSekali = parsed.bulanTagihan.length === 0;
 
-    await logActivity({
-      userId: session.user.id,
-      modul: "Kas Masuk",
-      aksi: "tambah",
-      keterangan: `Mencatat iuran ${kategoriData.namaKategori} Rp ${parsed.nominal.toLocaleString("id-ID")} (sekali bayar) untuk ${wargaData.namaKepalaKeluarga} (${wargaData.blokRumah})`,
+      if (isSekali) {
+        const [existingSekali] = await tx
+          .select({ id: transaksi.id })
+          .from(transaksi)
+          .where(
+            and(
+              eq(transaksi.wargaId, parsed.wargaId),
+              eq(transaksi.kategoriId, parsed.kategoriId),
+              eq(transaksi.tipeArus, "masuk"),
+              isNull(transaksi.bulanTagihan),
+              isNull(transaksi.tahunTagihan),
+            ),
+          )
+          .limit(1);
+
+        if (existingSekali) {
+          throw new Error(
+            `${wargaData.namaKepalaKeluarga} sudah membayar ${kategoriData.namaKategori} (sekali bayar) sebelumnya`,
+          );
+        }
+
+        const [inserted] = await tx
+          .insert(transaksi)
+          .values({
+            userId: session.user.id,
+            wargaId: parsed.wargaId,
+            kategoriId: parsed.kategoriId,
+            bulanTagihan: null,
+            tahunTagihan: null,
+            nominal: parsed.nominal,
+            tipeArus: "masuk" as const,
+            keterangan: parsed.keterangan ?? `${kategoriData.namaKategori} — ${wargaData.namaKepalaKeluarga}`,
+          })
+          .returning();
+
+        if (!inserted) throw new Error("Gagal menyimpan transaksi");
+
+        return {
+          inserted: [inserted],
+          wargaData,
+          kategoriData,
+          activityText: `Mencatat iuran ${kategoriData.namaKategori} Rp ${parsed.nominal.toLocaleString("id-ID")} (sekali bayar) untuk ${wargaData.namaKepalaKeluarga} (${wargaData.blokRumah})`,
+        };
+      }
+
+      const existing = await tx
+        .select({ bulanTagihan: transaksi.bulanTagihan })
+        .from(transaksi)
+        .where(
+          and(
+            eq(transaksi.wargaId, parsed.wargaId),
+            eq(transaksi.kategoriId, parsed.kategoriId),
+            eq(transaksi.tahunTagihan, parsed.tahunTagihan),
+            eq(transaksi.tipeArus, "masuk"),
+            inArray(transaksi.bulanTagihan, parsed.bulanTagihan),
+          ),
+        );
+
+      if (existing.length > 0) {
+        const duplicateBulans = existing.map((e) => e.bulanTagihan).join(", ");
+        throw new Error(
+          `${wargaData.namaKepalaKeluarga} sudah membayar ${kategoriData.namaKategori} untuk bulan: ${duplicateBulans} tahun ${parsed.tahunTagihan}`,
+        );
+      }
+
+      const inserted = await tx
+        .insert(transaksi)
+        .values(
+          parsed.bulanTagihan.map((bulan) => ({
+            userId: session.user.id,
+            wargaId: parsed.wargaId,
+            kategoriId: parsed.kategoriId,
+            bulanTagihan: bulan,
+            tahunTagihan: parsed.tahunTagihan,
+            nominal: parsed.nominal,
+            tipeArus: "masuk" as const,
+            keterangan: parsed.keterangan ?? `Iuran ${kategoriData.namaKategori} bulan ${bulan} ${parsed.tahunTagihan}`,
+          })),
+        )
+        .returning();
+
+      const bulanStr = parsed.bulanTagihan.join(", ");
+      return {
+        inserted,
+        wargaData,
+        kategoriData,
+        activityText: `Mencatat iuran ${kategoriData.namaKategori} Rp ${parsed.nominal.toLocaleString("id-ID")} untuk ${wargaData.namaKepalaKeluarga} (${wargaData.blokRumah}) bulan ${bulanStr} ${parsed.tahunTagihan}`,
+      };
     });
-
-    revalidatePath("/admin/kas-masuk");
-
-    return { inserted: [inserted], refNumber: generateRefNumber(), wargaData, kategoriData };
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new Error("Pembayaran duplikat terdeteksi untuk kategori dan periode yang sama.");
+    }
+    throw error;
   }
 
-  // Check for duplicate: find which selected months already have a record
-  const existing = await db
-    .select({ bulanTagihan: transaksi.bulanTagihan })
-    .from(transaksi)
-    .where(
-      and(
-        eq(transaksi.wargaId, parsed.wargaId),
-        eq(transaksi.kategoriId, parsed.kategoriId),
-        eq(transaksi.tahunTagihan, parsed.tahunTagihan),
-        eq(transaksi.tipeArus, "masuk"),
-        inArray(transaksi.bulanTagihan, parsed.bulanTagihan),
-      ),
-    );
-
-  if (existing.length > 0) {
-    const duplicateBulans = existing.map((e) => e.bulanTagihan).join(", ");
-    throw new Error(
-      `${wargaData.namaKepalaKeluarga} sudah membayar ${kategoriData.namaKategori} untuk bulan: ${duplicateBulans} tahun ${parsed.tahunTagihan}`,
-    );
-  }
-
-  // Insert one transaction per selected month
-  const inserted = await db
-    .insert(transaksi)
-    .values(
-      parsed.bulanTagihan.map((bulan) => ({
-        userId: session.user.id,
-        wargaId: parsed.wargaId,
-        kategoriId: parsed.kategoriId,
-        bulanTagihan: bulan,
-        tahunTagihan: parsed.tahunTagihan,
-        nominal: parsed.nominal,
-        tipeArus: "masuk" as const,
-        keterangan: parsed.keterangan ?? `Iuran ${kategoriData.namaKategori} bulan ${bulan} ${parsed.tahunTagihan}`,
-      })),
-    )
-    .returning();
-
-  const bulanStr = parsed.bulanTagihan.join(", ");
   await logActivity({
     userId: session.user.id,
     modul: "Kas Masuk",
     aksi: "tambah",
-    keterangan: `Mencatat iuran ${kategoriData.namaKategori} Rp ${parsed.nominal.toLocaleString("id-ID")} untuk ${wargaData.namaKepalaKeluarga} (${wargaData.blokRumah}) bulan ${bulanStr} ${parsed.tahunTagihan}`,
+    keterangan: result.activityText,
   });
 
   revalidatePath("/admin/kas-masuk");
 
-  return { inserted, refNumber: generateRefNumber(), wargaData, kategoriData };
+  return {
+    inserted: result.inserted,
+    refNumber: generateRefNumber(),
+    wargaData: result.wargaData,
+    kategoriData: result.kategoriData,
+  };
 }
 
 export async function getRecentPemasukan() {
