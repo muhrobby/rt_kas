@@ -1,6 +1,0 @@
- table_name |                 conname                  |                                definition                                
-------------+------------------------------------------+--------------------------------------------------------------------------
- transaksi  | transaksi_kategori_id_kategori_kas_id_fk | FOREIGN KEY (kategori_id) REFERENCES kategori_kas(id) ON DELETE RESTRICT
- transaksi  | transaksi_warga_id_warga_id_fk           | FOREIGN KEY (warga_id) REFERENCES warga(id) ON DELETE SET NULL
-(2 rows)
-
