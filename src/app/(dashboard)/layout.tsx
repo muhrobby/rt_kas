@@ -3,16 +3,9 @@ import type { ReactNode } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
-import {
-  SIDEBAR_COLLAPSIBLE_VALUES,
-  SIDEBAR_VARIANT_VALUES,
-} from "@/lib/preferences/layout";
+import { SIDEBAR_COLLAPSIBLE_VALUES, SIDEBAR_VARIANT_VALUES } from "@/lib/preferences/layout";
 import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config";
 import { cn } from "@/lib/utils";
 import { getPreference } from "@/server/server-actions";
@@ -24,9 +17,7 @@ import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export default async function DashboardLayout({ children }: Readonly<{ children: ReactNode }>) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
@@ -37,8 +28,7 @@ export default async function DashboardLayout({
     getPreference("sidebar_collapsible", SIDEBAR_COLLAPSIBLE_VALUES, "icon"),
   ]);
 
-  const { theme_mode, theme_preset, font, content_layout, navbar_style } =
-    PREFERENCE_DEFAULTS;
+  const { theme_mode, theme_preset, font, content_layout, navbar_style } = PREFERENCE_DEFAULTS;
 
   return (
     <PreferencesStoreProvider

@@ -16,18 +16,9 @@ export const metadata: Metadata = {
   description: APP_CONFIG.meta.description,
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
-  const {
-    theme_mode,
-    theme_preset,
-    content_layout,
-    navbar_style,
-    sidebar_variant,
-    sidebar_collapsible,
-    font,
-  } = PREFERENCE_DEFAULTS;
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const { theme_mode, theme_preset, content_layout, navbar_style, sidebar_variant, sidebar_collapsible, font } =
+    PREFERENCE_DEFAULTS;
   return (
     <html
       lang="en"

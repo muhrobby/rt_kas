@@ -8,10 +8,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Redirect unauthenticated users to login
-  if (
-    !sessionCookie &&
-    (pathname.startsWith("/admin") || pathname.startsWith("/warga"))
-  ) {
+  if (!sessionCookie && (pathname.startsWith("/admin") || pathname.startsWith("/warga"))) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

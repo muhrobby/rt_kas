@@ -1,8 +1,4 @@
-import {
-  getDashboardStats,
-  getMonthlyChartData,
-  getRecentActivity,
-} from "@/server/actions/dashboard";
+import { getDashboardStats, getMonthlyChartData, getRecentActivity } from "@/server/actions/dashboard";
 
 import { MonthlyChartClient } from "./_components/monthly-chart-client";
 import { RecentActivity } from "./_components/recent-activity";
@@ -23,9 +19,7 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-semibold text-2xl">Dashboard Admin</h1>
-        <p className="text-muted-foreground text-sm">
-          Selamat datang di panel administrasi Kas RT.
-        </p>
+        <p className="text-muted-foreground text-sm">Selamat datang di panel administrasi Kas RT.</p>
       </div>
 
       <StatCards
