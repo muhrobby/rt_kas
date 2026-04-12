@@ -18,8 +18,10 @@ const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_BULAN = BULAN_NAMES[new Date().getMonth()] ?? "Januari";
 
 export default function TunggakanPage() {
-  const [selectedTahun, setSelectedTahun] = useState(CURRENT_YEAR);
-  const [selectedBulan, setSelectedBulan] = useState<string>(CURRENT_BULAN);
+  const [selectedTahunMulai, setSelectedTahunMulai] = useState(CURRENT_YEAR);
+  const [selectedBulanMulai, setSelectedBulanMulai] = useState<string>(CURRENT_BULAN);
+  const [selectedTahunAkhir, setSelectedTahunAkhir] = useState(CURRENT_YEAR);
+  const [selectedBulanAkhir, setSelectedBulanAkhir] = useState<string>(CURRENT_BULAN);
   const [selectedKategoriId, setSelectedKategoriId] = useState(0);
   const [selectedTipeTagihan, setSelectedTipeTagihan] = useState<"bulanan" | "sekali" | null>(null);
   const [data, setData] = useState<TunggakanRow[]>([]);
@@ -40,20 +42,29 @@ export default function TunggakanPage() {
     getTunggakan({
       kategoriId: selectedKategoriId,
       tipeTagihan: selectedTipeTagihan,
-      tahunTagihan: selectedTahun,
-      bulanTagihan: selectedBulan,
+      tahunMulai: selectedTahunMulai,
+      bulanMulai: selectedBulanMulai,
+      tahunAkhir: selectedTahunAkhir,
+      bulanAkhir: selectedBulanAkhir,
     })
       .then((rows) => {
         setData(rows);
         setFetched(true);
       })
       .finally(() => setLoading(false));
-  }, [selectedTahun, selectedBulan, selectedKategoriId, selectedTipeTagihan]);
+  }, [
+    selectedTahunMulai,
+    selectedBulanMulai,
+    selectedTahunAkhir,
+    selectedBulanAkhir,
+    selectedKategoriId,
+    selectedTipeTagihan,
+  ]);
 
   const cardTitle =
     selectedTipeTagihan === "sekali"
       ? "Warga Belum Bayar — Event Sekali Bayar"
-      : `Warga Belum Bayar — ${selectedBulan} ${selectedTahun}`;
+      : `Warga Belum Bayar — ${selectedBulanMulai} ${selectedTahunMulai} s/d ${selectedBulanAkhir} ${selectedTahunAkhir}`;
 
   return (
     <div className="space-y-6">
@@ -63,12 +74,16 @@ export default function TunggakanPage() {
       </div>
 
       <TunggakanFilters
-        tahun={selectedTahun}
-        bulan={selectedBulan}
+        tahunMulai={selectedTahunMulai}
+        bulanMulai={selectedBulanMulai}
+        tahunAkhir={selectedTahunAkhir}
+        bulanAkhir={selectedBulanAkhir}
         kategoriId={selectedKategoriId}
         tipeTagihan={selectedTipeTagihan}
-        onTahunChange={setSelectedTahun}
-        onBulanChange={setSelectedBulan}
+        onTahunMulaiChange={setSelectedTahunMulai}
+        onBulanMulaiChange={setSelectedBulanMulai}
+        onTahunAkhirChange={setSelectedTahunAkhir}
+        onBulanAkhirChange={setSelectedBulanAkhir}
         onKategoriChange={handleKategoriChange}
       />
 
@@ -78,7 +93,7 @@ export default function TunggakanPage() {
           <AlertDescription>
             {selectedTipeTagihan === "sekali"
               ? "Pilih kategori iuran untuk melihat data tunggakan event."
-              : "Pilih tahun, bulan, dan kategori iuran untuk melihat data tunggakan."}
+              : "Pilih periode mulai, periode akhir, dan kategori iuran untuk melihat data tunggakan."}
           </AlertDescription>
         </Alert>
       )}

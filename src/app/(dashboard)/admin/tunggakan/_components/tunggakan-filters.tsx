@@ -14,12 +14,16 @@ interface KategoriOption {
 }
 
 interface TunggakanFiltersProps {
-  tahun: number;
-  bulan: string;
+  tahunMulai: number;
+  bulanMulai: string;
+  tahunAkhir: number;
+  bulanAkhir: string;
   kategoriId: number;
   tipeTagihan: "bulanan" | "sekali" | null;
-  onTahunChange: (v: number) => void;
-  onBulanChange: (v: string) => void;
+  onTahunMulaiChange: (v: number) => void;
+  onBulanMulaiChange: (v: string) => void;
+  onTahunAkhirChange: (v: number) => void;
+  onBulanAkhirChange: (v: string) => void;
   onKategoriChange: (id: number, tipe: "bulanan" | "sekali") => void;
 }
 
@@ -27,12 +31,16 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1] as const;
 
 export function TunggakanFilters({
-  tahun,
-  bulan,
+  tahunMulai,
+  bulanMulai,
+  tahunAkhir,
+  bulanAkhir,
   kategoriId,
   tipeTagihan,
-  onTahunChange,
-  onBulanChange,
+  onTahunMulaiChange,
+  onBulanMulaiChange,
+  onTahunAkhirChange,
+  onBulanAkhirChange,
   onKategoriChange,
 }: TunggakanFiltersProps) {
   const [kategoriList, setKategoriList] = useState<KategoriOption[]>([]);
@@ -47,8 +55,8 @@ export function TunggakanFilters({
     <div className="flex flex-wrap items-end gap-4">
       {!isSekali && (
         <div className="flex flex-col gap-1.5">
-          <Label className="text-sm">Tahun</Label>
-          <Select value={String(tahun)} onValueChange={(v) => onTahunChange(Number(v))}>
+          <Label className="text-sm">Tahun Mulai</Label>
+          <Select value={String(tahunMulai)} onValueChange={(v) => onTahunMulaiChange(Number(v))}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -65,8 +73,44 @@ export function TunggakanFilters({
 
       {!isSekali && (
         <div className="flex flex-col gap-1.5">
-          <Label className="text-sm">Bulan</Label>
-          <Select value={bulan} onValueChange={onBulanChange}>
+          <Label className="text-sm">Bulan Mulai</Label>
+          <Select value={bulanMulai} onValueChange={onBulanMulaiChange}>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {BULAN_NAMES.map((b) => (
+                <SelectItem key={b} value={b}>
+                  {b}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {!isSekali && (
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-sm">Tahun Akhir</Label>
+          <Select value={String(tahunAkhir)} onValueChange={(v) => onTahunAkhirChange(Number(v))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {YEAR_OPTIONS.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {!isSekali && (
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-sm">Bulan Akhir</Label>
+          <Select value={bulanAkhir} onValueChange={onBulanAkhirChange}>
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>

@@ -6,34 +6,52 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
+import { formatRupiah } from "@/lib/utils";
 import type { TunggakanRow } from "@/server/actions/tunggakan";
 
-const columns: ColumnDef<TunggakanRow>[] = [
-  {
-    accessorKey: "blokRumah",
-    header: "Blok",
-    cell: ({ row }) => <span className="font-medium font-mono">{row.original.blokRumah}</span>,
-  },
-  {
-    accessorKey: "namaKepalaKeluarga",
-    header: "Nama Kepala Keluarga",
-    cell: ({ row }) => <span>{row.original.namaKepalaKeluarga}</span>,
-  },
-  {
-    accessorKey: "noTelp",
-    header: "No. Telp",
-    cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.noTelp}</span>,
-  },
-  {
-    accessorKey: "statusHunian",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge variant={row.original.statusHunian === "tetap" ? "default" : "secondary"}>
-        {row.original.statusHunian === "tetap" ? "Tetap" : "Kontrak"}
-      </Badge>
-    ),
-  },
-];
+function getColumns(tipeTagihan: "bulanan" | "sekali" | null): ColumnDef<TunggakanRow>[] {
+  return [
+    {
+      accessorKey: "blokRumah",
+      header: "Blok",
+      cell: ({ row }) => <span className="font-medium font-mono">{row.original.blokRumah}</span>,
+    },
+    {
+      accessorKey: "namaKepalaKeluarga",
+      header: "Nama Kepala Keluarga",
+      cell: ({ row }) => <span>{row.original.namaKepalaKeluarga}</span>,
+    },
+    {
+      accessorKey: "noTelp",
+      header: "No. Telp",
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.noTelp}</span>,
+    },
+    {
+      accessorKey: "statusHunian",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant={row.original.statusHunian === "tetap" ? "default" : "secondary"}>
+          {row.original.statusHunian === "tetap" ? "Tetap" : "Kontrak"}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "totalBulanTunggakan",
+      header: "Total Bulan Tunggakan",
+      cell: ({ row }) => {
+        if (tipeTagihan === "sekali") return <span className="text-center">-</span>;
+        return <span className="font-medium">{row.original.totalBulanTunggakan} Bulan</span>;
+      },
+    },
+    {
+      accessorKey: "sumNominalTunggakan",
+      header: "Nominal Tunggakan",
+      cell: ({ row }) => (
+        <span className="font-bold text-destructive">{formatRupiah(row.original.sumNominalTunggakan)}</span>
+      ),
+    },
+  ];
+}
 
 interface TunggakanTableProps {
   data: TunggakanRow[];
@@ -41,6 +59,7 @@ interface TunggakanTableProps {
 }
 
 export function TunggakanTable({ data, tipeTagihan }: TunggakanTableProps) {
+  const columns = getColumns(tipeTagihan);
   const table = useDataTableInstance({
     data,
     columns,
