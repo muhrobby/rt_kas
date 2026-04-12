@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
@@ -95,11 +95,11 @@ export async function getBillingStatus(month: number, year: number): Promise<Bil
       ),
     );
 
-  // Fetch sekali-bayar payments (no month/year filter — just wargaId + kategoriId)
+  // Fetch sekali-bayar payments (filter only one-time entries)
   const sekaliPayments = await db
     .select({ id: transaksi.id, kategoriId: transaksi.kategoriId })
     .from(transaksi)
-    .where(and(eq(transaksi.wargaId, wargaId), eq(transaksi.tipeArus, "masuk")));
+    .where(and(eq(transaksi.wargaId, wargaId), eq(transaksi.tipeArus, "masuk"), isNull(transaksi.bulanTagihan)));
 
   return categories.map((kat) => {
     const payments = kat.tipeTagihan === "sekali" ? sekaliPayments : bulananPayments;

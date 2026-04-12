@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi, user, warga } from "@/db/schema";
@@ -77,7 +77,7 @@ export async function getPaymentGrid(bulan: number, tahun: number): Promise<Paym
     )
     .orderBy(asc(transaksi.waktuTransaksi));
 
-  // Sekali-bayar payments (no year/bulan filter)
+  // Sekali-bayar payments (filter only one-time entries)
   const sekaliPayments = await db
     .select({
       id: transaksi.id,
@@ -86,7 +86,7 @@ export async function getPaymentGrid(bulan: number, tahun: number): Promise<Paym
       waktuTransaksi: transaksi.waktuTransaksi,
     })
     .from(transaksi)
-    .where(and(eq(transaksi.wargaId, wargaId), eq(transaksi.tipeArus, "masuk")));
+    .where(and(eq(transaksi.wargaId, wargaId), eq(transaksi.tipeArus, "masuk"), isNull(transaksi.bulanTagihan)));
 
   return categories.map((kat): PaymentGridByKategori => {
     if (kat.tipeTagihan === "sekali") {

@@ -58,7 +58,7 @@ export async function getTunggakan(filters: TunggakanFilters): Promise<Tunggakan
       })
       .from(warga)
       .leftJoin(transaksi, joinConditionSekali)
-      .where(isNull(transaksi.id))
+      .where(and(isNull(transaksi.id), isNull(warga.tglPindah)))
       .orderBy(warga.blokRumah, warga.namaKepalaKeluarga);
 
     return rows.map((row) => ({
@@ -93,7 +93,8 @@ export async function getTunggakan(filters: TunggakanFilters): Promise<Tunggakan
     })
     .from(warga)
     .leftJoin(transaksi, joinConditionBulanan)
-    .groupBy(warga.id)
+    .where(isNull(warga.tglPindah))
+    .groupBy(warga.id, warga.namaKepalaKeluarga, warga.blokRumah, warga.noTelp, warga.statusHunian)
     .orderBy(warga.blokRumah, warga.namaKepalaKeluarga);
 
   const totalPeriods = periods.length;

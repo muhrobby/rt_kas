@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi } from "@/db/schema";
@@ -79,11 +79,10 @@ export async function deleteKategori(id: number) {
 
   // Block deletion if referenced by transactions
   const [usage] = await db
-    .select({ count: eq(transaksi.kategoriId, id) })
+    .select({ count: sql<number>`count(*)::int` })
     .from(transaksi)
-    .where(eq(transaksi.kategoriId, id))
-    .limit(1);
-  if (usage) throw new Error("Kategori ini sudah digunakan dalam transaksi dan tidak bisa dihapus");
+    .where(eq(transaksi.kategoriId, id));
+  if (usage && usage.count > 0) throw new Error("Kategori ini sudah digunakan dalam transaksi dan tidak bisa dihapus");
 
   await db.delete(kategoriKas).where(eq(kategoriKas.id, id));
   await logActivity({

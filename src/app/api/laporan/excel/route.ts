@@ -2,23 +2,9 @@ import type { NextRequest } from "next/server";
 
 import { requireAdmin } from "@/lib/auth-helpers";
 import { generateExcelBuffer } from "@/lib/excel/export-helpers";
+import { BULAN_NAMES } from "@/lib/utils";
 import { laporanParamsSchema } from "@/lib/validations/laporan";
 import { getRekapKas } from "@/server/actions/laporan";
-
-const BULAN_NAMES = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-] as const;
 
 export async function GET(request: NextRequest) {
   await requireAdmin();

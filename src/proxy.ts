@@ -3,13 +3,28 @@ import { NextResponse } from "next/server";
 
 import { getSessionCookie } from "better-auth/cookies";
 
+import { auth } from "@/lib/auth";
+
 export async function proxy(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isWargaRoute = pathname.startsWith("/warga");
 
   // Redirect unauthenticated users to login
-  if (!sessionCookie && (pathname.startsWith("/admin") || pathname.startsWith("/warga"))) {
+  if (!sessionCookie && (isAdminRoute || isWargaRoute)) {
     return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  if (sessionCookie && (isAdminRoute || isWargaRoute)) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    if (isAdminRoute && session.user.role !== "admin") {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
   }
 
   return NextResponse.next();
