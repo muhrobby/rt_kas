@@ -1,10 +1,11 @@
 "use server";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { kategoriKas, transaksi, warga } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { getPeriodsInRange } from "@/lib/utils";
 
 export interface TunggakanRow {
   wargaId: number;
@@ -12,42 +13,74 @@ export interface TunggakanRow {
   blokRumah: string;
   noTelp: string;
   statusHunian: string;
+  totalBulanTunggakan: number;
+  sumNominalTunggakan: number;
 }
 
 export interface TunggakanFilters {
   kategoriId: number;
   tipeTagihan: "bulanan" | "sekali";
-  /** Only used when tipeTagihan === "bulanan" */
-  tahunTagihan: number;
-  /** Only used when tipeTagihan === "bulanan" */
-  bulanTagihan: string;
+  tahunMulai: number;
+  bulanMulai: string;
+  tahunAkhir: number;
+  bulanAkhir: string;
 }
 
 /**
- * Returns list of warga who have NOT paid for a given kategori.
- *
- * For bulanan: joins on (wargaId + kategoriId + bulanTagihan + tahunTagihan).
- * For sekali:  joins on (wargaId + kategoriId) only — bulan/tahun are NULL for one-time payments.
- * Both cases use LEFT JOIN + WHERE transaksi.id IS NULL.
+ * Returns list of warga who have unpaid bills for selected kategori.
+ * - sekali: unpaid status is binary (paid/unpaid once)
+ * - bulanan: unpaid is aggregated across a period range
  */
 export async function getTunggakan(filters: TunggakanFilters): Promise<TunggakanRow[]> {
   await requireAdmin();
 
-  const joinCondition =
-    filters.tipeTagihan === "sekali"
-      ? and(
-          eq(transaksi.wargaId, warga.id),
-          eq(transaksi.kategoriId, filters.kategoriId),
-          eq(transaksi.tipeArus, "masuk"),
-          isNull(transaksi.bulanTagihan),
-        )
-      : and(
-          eq(transaksi.wargaId, warga.id),
-          eq(transaksi.kategoriId, filters.kategoriId),
-          eq(transaksi.bulanTagihan, filters.bulanTagihan),
-          eq(transaksi.tahunTagihan, filters.tahunTagihan),
-          eq(transaksi.tipeArus, "masuk"),
-        );
+  const kategori = await db.query.kategoriKas.findFirst({
+    where: eq(kategoriKas.id, filters.kategoriId),
+  });
+
+  if (!kategori) throw new Error("Kategori tidak ditemukan");
+
+  if (filters.tipeTagihan === "sekali") {
+    const joinConditionSekali = and(
+      eq(transaksi.wargaId, warga.id),
+      eq(transaksi.kategoriId, filters.kategoriId),
+      eq(transaksi.tipeArus, "masuk"),
+      isNull(transaksi.bulanTagihan),
+    );
+
+    const rows = await db
+      .select({
+        wargaId: warga.id,
+        namaKepalaKeluarga: warga.namaKepalaKeluarga,
+        blokRumah: warga.blokRumah,
+        noTelp: warga.noTelp,
+        statusHunian: warga.statusHunian,
+      })
+      .from(warga)
+      .leftJoin(transaksi, joinConditionSekali)
+      .where(isNull(transaksi.id))
+      .orderBy(warga.blokRumah, warga.namaKepalaKeluarga);
+
+    return rows.map((row) => ({
+      ...row,
+      totalBulanTunggakan: 1,
+      sumNominalTunggakan: kategori.nominalDefault,
+    }));
+  }
+
+  const periods = getPeriodsInRange(filters.bulanMulai, filters.tahunMulai, filters.bulanAkhir, filters.tahunAkhir);
+  if (periods.length === 0) return [];
+
+  const periodConditions = periods.map((period) =>
+    and(eq(transaksi.bulanTagihan, period.bulan), eq(transaksi.tahunTagihan, period.tahun)),
+  );
+
+  const joinConditionBulanan = and(
+    eq(transaksi.wargaId, warga.id),
+    eq(transaksi.kategoriId, filters.kategoriId),
+    eq(transaksi.tipeArus, "masuk"),
+    or(...periodConditions),
+  );
 
   const rows = await db
     .select({
@@ -56,20 +89,29 @@ export async function getTunggakan(filters: TunggakanFilters): Promise<Tunggakan
       blokRumah: warga.blokRumah,
       noTelp: warga.noTelp,
       statusHunian: warga.statusHunian,
-      transaksiId: transaksi.id,
+      paidMonths: sql<number>`count(${transaksi.id})::int`,
     })
     .from(warga)
-    .leftJoin(transaksi, joinCondition)
-    .where(isNull(transaksi.id))
+    .leftJoin(transaksi, joinConditionBulanan)
+    .groupBy(warga.id)
     .orderBy(warga.blokRumah, warga.namaKepalaKeluarga);
 
-  return rows.map((r) => ({
-    wargaId: r.wargaId,
-    namaKepalaKeluarga: r.namaKepalaKeluarga,
-    blokRumah: r.blokRumah,
-    noTelp: r.noTelp,
-    statusHunian: r.statusHunian,
-  }));
+  const totalPeriods = periods.length;
+
+  return rows
+    .map((row) => {
+      const totalBulanTunggakan = totalPeriods - row.paidMonths;
+      return {
+        wargaId: row.wargaId,
+        namaKepalaKeluarga: row.namaKepalaKeluarga,
+        blokRumah: row.blokRumah,
+        noTelp: row.noTelp,
+        statusHunian: row.statusHunian,
+        totalBulanTunggakan,
+        sumNominalTunggakan: totalBulanTunggakan * kategori.nominalDefault,
+      };
+    })
+    .filter((row) => row.totalBulanTunggakan > 0);
 }
 
 /**

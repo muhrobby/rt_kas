@@ -78,6 +78,42 @@ export function generateRefNumber(prefix = "TRX"): string {
   return `${prefix}-${dateStr}-${random}`;
 }
 
+export interface PeriodeTagihan {
+  bulan: string;
+  tahun: number;
+}
+
+export function getPeriodsInRange(
+  startBulan: string,
+  startTahun: number,
+  endBulan: string,
+  endTahun: number,
+): PeriodeTagihan[] {
+  const periods: PeriodeTagihan[] = [];
+  const startIndex = BULAN_NAMES.indexOf(startBulan as (typeof BULAN_NAMES)[number]);
+  const endIndex = BULAN_NAMES.indexOf(endBulan as (typeof BULAN_NAMES)[number]);
+
+  if (startIndex === -1 || endIndex === -1) return periods;
+
+  let currentMonth = startIndex;
+  let currentYear = startTahun;
+
+  while (currentYear < endTahun || (currentYear === endTahun && currentMonth <= endIndex)) {
+    periods.push({
+      bulan: BULAN_NAMES[currentMonth] ?? "Januari",
+      tahun: currentYear,
+    });
+
+    currentMonth += 1;
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear += 1;
+    }
+  }
+
+  return periods;
+}
+
 // ── Legacy template utility ──────────────────────────────────────────────────
 
 export function formatCurrency(
