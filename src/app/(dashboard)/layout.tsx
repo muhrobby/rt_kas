@@ -18,7 +18,12 @@ import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  let session = null;
+  try {
+    session = await auth.api.getSession({ headers: await headers() });
+  } catch {
+    session = null;
+  }
   if (!session) redirect("/login");
 
   const cookieStore = await cookies();

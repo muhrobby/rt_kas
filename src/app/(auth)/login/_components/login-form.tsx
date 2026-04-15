@@ -42,17 +42,7 @@ export function LoginForm() {
     setIsLoading(true);
     setErrorMsg(null);
 
-    const translateError = (message?: string) => {
-      if (!message) return "Login gagal. Periksa nomor HP dan password Anda.";
-      const lowerMessage = message.toLowerCase();
-      if (lowerMessage.includes("invalid username or password")) {
-        return "Nomor HP atau password salah.";
-      }
-      if (lowerMessage.includes("user not found")) {
-        return "Pengguna tidak ditemukan.";
-      }
-      return message;
-    };
+    const authFailedMessage = "Nomor HP atau password salah.";
 
     const { error } = await signIn.username({
       username: data.username,
@@ -63,18 +53,16 @@ export function LoginForm() {
           router.push("/");
           router.refresh();
         },
-        onError: (ctx) => {
-          const msg = translateError(ctx.error.message);
-          setErrorMsg(msg);
-          toast.error(msg);
+        onError: (_ctx) => {
+          setErrorMsg(authFailedMessage);
+          toast.error(authFailedMessage);
         },
       },
     });
 
     if (error) {
-      const msg = translateError(error.message);
-      setErrorMsg(msg);
-      toast.error(msg);
+      setErrorMsg(authFailedMessage);
+      toast.error(authFailedMessage);
     }
     setIsLoading(false);
   };

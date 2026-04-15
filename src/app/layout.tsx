@@ -34,6 +34,29 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <head>
         {/* Applies theme and layout preferences on load to avoid flicker and unnecessary server rerenders. */}
         <ThemeBootScript />
+        <script
+          suppressHydrationWarning
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: bootstrap script must execute before hydration
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var tpl = document.getElementById("theme-boot-template");
+                  if (!tpl) return;
+
+                  var encoded = tpl.getAttribute("data-theme-boot-code") || "";
+                  var code = decodeURIComponent(encoded);
+                  if (!code) return;
+
+                  var s = document.createElement("script");
+                  s.id = "theme-boot-script";
+                  s.text = code;
+                  document.head.appendChild(s);
+                } catch (_) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body className={`${fontVars} min-h-screen antialiased`}>{children}</body>
     </html>

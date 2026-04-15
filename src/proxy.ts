@@ -17,7 +17,12 @@ export async function proxy(request: NextRequest) {
   }
 
   if (sessionCookie && (isAdminRoute || isWargaRoute)) {
-    const session = await auth.api.getSession({ headers: request.headers });
+    let session = null;
+    try {
+      session = await auth.api.getSession({ headers: request.headers });
+    } catch {
+      session = null;
+    }
     if (!session) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
