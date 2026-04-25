@@ -1,6 +1,6 @@
 // src/db/schema/auth.ts
 // Better Auth managed tables (user, session, account, verification)
-// Generated for: username plugin + admin plugin
+// Generated for: username plugin with custom role additional field
 // Adapted manually due to CLI resolution issues with better-auth@1.5.3
 
 import { sql } from "drizzle-orm";
@@ -13,15 +13,11 @@ export const user = pgTable(
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull().default(false),
-    image: text("image"),
     // username plugin fields
     username: text("username").unique(),
     displayUsername: text("display_username"),
-    // admin plugin fields
+    // custom role field for app-level authorization
     role: text("role").default("user"),
-    banned: boolean("banned").default(false),
-    banReason: text("ban_reason"),
-    banExpires: timestamp("ban_expires"),
     // custom field — links to warga profile
     wargaId: integer("warga_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -42,8 +38,6 @@ export const session = pgTable("session", {
   expiresAt: timestamp("expires_at").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  // admin plugin: impersonation support
-  impersonatedBy: text("impersonated_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -55,12 +49,6 @@ export const account = pgTable("account", {
     .references(() => user.id, { onDelete: "cascade" }),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
   password: text("password"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

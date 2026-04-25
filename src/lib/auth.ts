@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, username } from "better-auth/plugins";
+import { username } from "better-auth/plugins";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -17,9 +17,6 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
   },
   plugins: [
-    admin({
-      defaultRole: "user",
-    }),
     username({
       minUsernameLength: 10,
       maxUsernameLength: 15,
@@ -31,6 +28,12 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
+      role: {
+        type: ["user", "admin"],
+        required: false,
+        defaultValue: "user",
+        input: false,
+      },
       wargaId: {
         type: "number",
         required: false,

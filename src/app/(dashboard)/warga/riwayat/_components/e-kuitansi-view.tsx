@@ -30,8 +30,9 @@ export function EKuitansiView({ transaksiId, onClose }: EKuitansiViewProps) {
       .finally(() => setLoading(false));
   }, [transaksiId]);
 
+  const validBulan = detail?.bulanTagihan && detail.bulanTagihan.trim() !== "";
   const periodeLabel =
-    detail?.bulanTagihan && detail?.tahunTagihan
+    validBulan && detail?.tahunTagihan
       ? `${BULAN_NAMES[Number(detail.bulanTagihan) - 1]} ${detail.tahunTagihan}`
       : "Sekali Bayar";
 
@@ -42,7 +43,7 @@ export function EKuitansiView({ transaksiId, onClose }: EKuitansiViewProps) {
           <DrawerTitle className="text-center text-lg">E-Kuitansi</DrawerTitle>
         </DrawerHeader>
 
-        <div className="space-y-1 px-6 pb-2">
+        <div className="space-y-4 px-6 pb-2">
           {loading || !detail ? (
             <div className="space-y-3">
               {["sk-1", "sk-2", "sk-3", "sk-4", "sk-5", "sk-6"].map((k) => (
@@ -51,25 +52,50 @@ export function EKuitansiView({ transaksiId, onClose }: EKuitansiViewProps) {
             </div>
           ) : (
             <>
-              {/* Receipt header */}
-              <div className="mb-4 text-center">
-                <p className="text-muted-foreground text-xs">Kas RT Lingkungan</p>
-                <div className="my-3 border-t border-dashed" />
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <p className="text-center text-muted-foreground text-xs">Kas RT Lingkungan</p>
+                <div className="mt-3 rounded-lg bg-muted/40 px-4 py-3 text-center">
+                  <p className="text-muted-foreground text-xs">Nominal pembayaran</p>
+                  <p className="mt-1 font-semibold text-2xl tracking-tight">{formatRupiah(detail.nominal)}</p>
+                  <p className="mt-1 text-muted-foreground text-xs">{detail.namaKategori}</p>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Tanggal bayar</p>
+                    <p className="font-medium text-sm">{formatTanggal(detail.waktuTransaksi)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-muted-foreground text-xs">Referensi</p>
+                    <p className="font-mono text-sm">TRX-{String(detail.id).padStart(6, "0")}</p>
+                  </div>
+                </div>
               </div>
 
-              <Row label="No. Referensi" value={`TRX-${String(detail.id).padStart(6, "0")}`} mono />
-              <Row label="Tanggal Bayar" value={formatTanggal(detail.waktuTransaksi)} />
-              <div className="my-2 border-t border-dashed" />
-              <Row label="Warga" value={detail.namaWarga} />
-              <Row label="Blok / No." value={detail.blokRumah} />
-              <Row label="Kategori" value={detail.namaKategori} />
-              <Row label="Periode" value={periodeLabel} />
-              <Row label="Nominal" value={formatRupiah(detail.nominal)} bold />
-              <div className="my-2 border-t border-dashed" />
-              <Row label="Dicatat oleh" value={detail.dicatatOleh} />
-              <Row label="Pada" value={formatWaktu(detail.waktuTransaksi)} />
-              {detail.keterangan && <Row label="Keterangan" value={detail.keterangan} />}
-              <div className="my-3 border-t border-dashed" />
+              <section className="rounded-xl border bg-card p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">Detail pembayaran</h3>
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-muted-foreground text-xs">
+                    {periodeLabel}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <Row label="Warga" value={detail.namaWarga} />
+                  <Row label="Blok / No." value={detail.blokRumah} />
+                  <Row label="Kategori" value={detail.namaKategori} />
+                  <Row label="Periode" value={periodeLabel} />
+                </div>
+              </section>
+
+              <section className="rounded-xl border bg-card p-4 shadow-sm">
+                <h3 className="mb-3 font-semibold text-sm">Pencatat transaksi</h3>
+                <div className="space-y-2">
+                  <Row label="Dicatat oleh" value={detail.dicatatOleh} />
+                  <Row label="Waktu input" value={formatWaktu(detail.waktuTransaksi)} />
+                  {detail.keterangan && <Row label="Keterangan" value={detail.keterangan} />}
+                </div>
+              </section>
+
               <p className="text-center text-muted-foreground text-xs">Ini adalah bukti pembayaran digital yang sah.</p>
             </>
           )}

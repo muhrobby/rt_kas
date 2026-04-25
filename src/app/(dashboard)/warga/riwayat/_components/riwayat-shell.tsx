@@ -21,15 +21,19 @@ export function RiwayatShell({ initialBulan, initialTahun, initialPeriods, initi
   const [selectedTahun, setSelectedTahun] = useState(initialTahun);
   const [grids, setGrids] = useState<PaymentGridByKategori[]>(initialGrids);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedTransaksiId, setSelectedTransaksiId] = useState<number | null>(null);
 
   const handlePeriodChange = useCallback(async (bulan: number, tahun: number) => {
     setSelectedBulan(bulan);
     setSelectedTahun(tahun);
     setLoading(true);
+    setErrorMessage(null);
     try {
       const newGrids = await getPaymentGrid(bulan, tahun);
       setGrids(newGrids);
+    } catch {
+      setErrorMessage("Gagal memuat data riwayat pembayaran. Coba pilih periode lain atau muat ulang halaman.");
     } finally {
       setLoading(false);
     }
@@ -42,16 +46,24 @@ export function RiwayatShell({ initialBulan, initialTahun, initialPeriods, initi
         selectedBulan={selectedBulan}
         selectedTahun={selectedTahun}
         onPeriodChange={handlePeriodChange}
+        loading={loading}
       />
 
       {loading ? (
-        <div className="py-8 text-center text-muted-foreground text-sm">Memuat data...</div>
+        <PaymentHistory
+          grids={grids}
+          selectedBulan={selectedBulan}
+          selectedTahun={selectedTahun}
+          onKuitansiClick={(id: number) => setSelectedTransaksiId(id)}
+          loading
+        />
       ) : (
         <PaymentHistory
           grids={grids}
           selectedBulan={selectedBulan}
           selectedTahun={selectedTahun}
           onKuitansiClick={(id: number) => setSelectedTransaksiId(id)}
+          errorMessage={errorMessage}
         />
       )}
 

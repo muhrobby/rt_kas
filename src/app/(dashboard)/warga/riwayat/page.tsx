@@ -15,11 +15,18 @@ export default async function RiwayatPage() {
 
   if (!profile) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-6">
-        <h1 className="mb-2 font-bold text-2xl">Riwayat Pembayaran</h1>
-        <div className="rounded-xl border bg-card p-6 text-center">
+      <div className="px-4 py-6">
+        <div className="mb-4 space-y-1">
+          <h1 className="font-bold text-2xl tracking-tight">Status iuran per periode</h1>
           <p className="text-muted-foreground text-sm">
-            Profil warga tidak ditemukan. Hubungi admin untuk menghubungkan akun Anda.
+            Lihat status pembayaran, periode tagihan, dan e-kuitansi dalam satu tempat.
+          </p>
+        </div>
+
+        <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
+          <p className="font-medium text-sm">Profil warga belum terhubung</p>
+          <p className="mt-2 text-muted-foreground text-sm">
+            Akun Anda belum tersambung ke data warga. Silakan hubungi admin agar riwayat pembayaran bisa ditampilkan.
           </p>
         </div>
       </div>
@@ -30,7 +37,7 @@ export default async function RiwayatPage() {
   const currentBulan = now.getMonth() + 1;
   const currentTahun = now.getFullYear();
 
-  const [periods, grids] = await Promise.all([getAvailableMonthsYears(), getPaymentGrid(currentBulan, currentTahun)]);
+  const periods = await getAvailableMonthsYears();
 
   // Default to latest period that has data, or current month if none
   const defaultPeriod = periods[0] ?? {
@@ -39,11 +46,17 @@ export default async function RiwayatPage() {
     label: `${BULAN_NAMES[currentBulan - 1]} ${currentTahun}`,
   };
 
+  const grids = await getPaymentGrid(defaultPeriod.bulan, defaultPeriod.tahun);
+
   return (
-    <div className="mx-auto max-w-lg space-y-4 px-4 py-6">
-      <div>
-        <h1 className="font-bold text-2xl">Riwayat Pembayaran</h1>
-        <p className="text-muted-foreground text-sm">Riwayat iuran Keluarga {profile.namaKepalaKeluarga}</p>
+    <div className="space-y-6 px-4 py-6">
+      <div className="space-y-1">
+        <h1 className="font-bold text-2xl tracking-tight">Status iuran per periode</h1>
+        <p className="text-muted-foreground text-sm">
+          Riwayat pembayaran Keluarga {profile.namaKepalaKeluarga}.
+          <br />
+          Pilih periode untuk melihat status lunas, belum bayar, dan e-kuitansi.
+        </p>
       </div>
 
       <RiwayatShell

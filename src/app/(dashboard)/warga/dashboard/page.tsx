@@ -15,10 +15,10 @@ export default async function WargaDashboardPage() {
   const billingItems = profile ? await getBillingStatus(currentMonth, currentYear) : [];
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 px-4 py-6">
+    <div className="space-y-6 px-4 py-6">
       <GreetingHeader profile={profile} />
-      <KasBalanceCard balance={balance} />
       <BillingStatusCard items={billingItems} month={currentMonth} year={currentYear} />
+      <KasBalanceCard balance={balance} />
       <QuickActions />
     </div>
   );
